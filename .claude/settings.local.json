@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find *)",
+      "Bash(ls *)",
+      "Read(//c/develop/claude-code-app-pipeline/artifacts/**)",
+      "Write(//c/develop/claude-code-app-pipeline/artifacts/**)",
+      "Edit(//c/develop/claude-code-app-pipeline/artifacts/**)"
+    ]
+  }
+}

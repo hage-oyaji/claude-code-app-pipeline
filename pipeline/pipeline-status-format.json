@@ -1,0 +1,292 @@
+{
+  "pipeline": {
+    "status": "not_started",
+    "current_stage": null,
+    "active_agents": [],
+    "started_at": null,
+    "updated_at": null,
+    "completed_at": null,
+    "total_input_tokens": 0,
+    "total_output_tokens": 0,
+    "total_duration_seconds": 0,
+    "total_rework_count": 0,
+    "token_limit": null,
+    "token_limit_reached": false,
+    "mode": "normal",
+    "initial_command": null,
+    "final_report": null,
+    "last_completed_stage": null,
+    "max_parallel": 3,
+    "checkpoint": {
+      "description": "最後に正常完了した工程。障害復旧時はこの工程の次から再開する。",
+      "last_successful_stage": null,
+      "last_successful_at": null
+    }
+  },
+  "retry_policy": {
+    "description": "エージェント実行失敗時のリトライポリシー",
+    "max_retries_per_stage": 2,
+    "retry_on": ["timeout", "context_overflow", "agent_error"]
+  },
+  "quality_gates": {
+    "description": "各工程の品質ゲート定義。required_artifacts に指定されたファイル/ディレクトリが存在しない場合、次工程への遷移をブロックする。",
+    "requirements": {
+      "required_artifacts": ["artifacts/requirements/requirements.md"],
+      "min_file_size_bytes": 100
+    },
+    "data-modeling": {
+      "required_artifacts": [
+        "artifacts/data-model/ddl.sql",
+        "artifacts/data-model/er-diagram.md"
+      ],
+      "min_file_size_bytes": 100
+    },
+    "design": {
+      "required_artifacts": ["artifacts/design/basic-design.md"],
+      "min_file_size_bytes": 100
+    },
+    "project-rule": {
+      "required_artifacts": ["rules/project-rule.md"],
+      "min_file_size_bytes": 100
+    },
+    "coding": {
+      "required_artifacts": ["artifacts/code/src/"],
+      "min_file_size_bytes": 0,
+      "custom_check": "mvn_compile"
+    },
+    "unit-test": {
+      "required_artifacts": ["artifacts/test-results/"],
+      "min_file_size_bytes": 0,
+      "custom_check": "test_pass_rate"
+    },
+    "enhanced-test": {
+      "required_artifacts": ["artifacts/test-results/"],
+      "min_file_size_bytes": 0,
+      "custom_check": "test_pass_rate"
+    },
+    "complete-test": {
+      "required_artifacts": ["artifacts/test-results/"],
+      "min_file_size_bytes": 0,
+      "custom_check": "test_pass_rate"
+    },
+    "integration-test": {
+      "required_artifacts": ["artifacts/test-results/"],
+      "min_file_size_bytes": 0,
+      "custom_check": "test_pass_rate"
+    }
+  },
+  "observability": {
+    "description": "パイプライン全体の観測メトリクス。フックが自動集計する。",
+    "stage_metrics": {},
+    "rework_log": []
+  },
+  "stages": {
+    "requirements": {
+      "enabled": true,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [],
+      "outputDir": "artifacts/requirements/"
+    },
+    "data-modeling": {
+      "enabled": true,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/requirements/"
+      ],
+      "outputDir": "artifacts/data-model/"
+    },
+    "design": {
+      "enabled": true,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/requirements/",
+        "artifacts/data-model/"
+      ],
+      "outputDir": "artifacts/design/"
+    },
+    "project-rule": {
+      "enabled": true,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/requirements/",
+        "artifacts/design/",
+        "artifacts/code/"
+      ],
+      "outputDir": "rules/"
+    },
+    "coding": {
+      "enabled": true,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/data-model/",
+        "artifacts/design/",
+        "rules/"
+      ],
+      "inputNote": "design/ は今回の機能分のみ参照。隊長が命令書で対象ファイルを明示すること。",
+      "outputDir": "artifacts/code/"
+    },
+    "unit-test": {
+      "enabled": true,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/code/",
+        "rules/"
+      ],
+      "outputDir": "artifacts/test-results/"
+    },
+    "enhanced-test": {
+      "enabled": false,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/code/",
+        "rules/"
+      ],
+      "outputDir": "artifacts/test-results/"
+    },
+    "complete-test": {
+      "enabled": false,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/data-model/",
+        "artifacts/design/",
+        "artifacts/code/",
+        "rules/"
+      ],
+      "inputNote": "design/ は今回の機能分のみ参照。隊長が命令書で対象ファイルを明示すること。",
+      "outputDir": "artifacts/test-results/"
+    },
+    "integration-test": {
+      "enabled": true,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/design/",
+        "artifacts/code/",
+        "rules/"
+      ],
+      "inputNote": "design/ は今回の機能分のみ参照。隊長が命令書で対象ファイルを明示すること。",
+      "outputDir": "artifacts/test-results/"
+    },
+    "skill-dev": {
+      "enabled": true,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/requirements/",
+        "artifacts/design/",
+        "artifacts/code/",
+        "artifacts/test-results/",
+        ".claude/skills/"
+      ],
+      "outputDir": "artifacts/skills/"
+    }
+  }
+}

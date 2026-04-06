@@ -1,0 +1,13 @@
+# バックアップファイル
+pipeline/backups/
+pipeline/pipeline-status.json
+pipeline/hook-debug.log
+
+# 生成されたファイル
+artifacts/code/*
+artifacts/data-model/*
+artifacts/design/*
+artifacts/docs/*
+artifacts/requirements/*
+artifacts/test-results/*
+rules/*

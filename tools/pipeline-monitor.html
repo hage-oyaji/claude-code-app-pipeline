@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pipeline Monitor</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, sans-serif;
+    background: #0a0e1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: linear-gradient(135deg, #1a1f35 0%, #0d1117 100%);
+    border-bottom: 1px solid #2a3050;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header h1 {
+    font-size: 20px; font-weight: 600; color: #fff;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .header h1::before {
+    content: ''; display: inline-block; width: 8px; height: 8px;
+    border-radius: 50%; background: #3b82f6; box-shadow: 0 0 8px #3b82f680;
+  }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+  .header-info { font-size: 13px; color: #8899aa; }
+
+  .btn-command {
+    padding: 6px 14px; border-radius: 8px; border: 1px solid #16a34a;
+    background: linear-gradient(135deg, #052e16 0%, #14532d 100%);
+    color: #4ade80; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-command:hover { background: linear-gradient(135deg, #14532d 0%, #166534 100%); border-color: #22c55e; }
+  .btn-command:disabled { opacity: 0.4; cursor: default; }
+
+  .pipeline-status-bar {
+    padding: 12px 32px; background: #0f1320; border-bottom: 1px solid #1a2040;
+    display: flex; align-items: center; gap: 16px; font-size: 13px;
+  }
+
+  .pipeline-badge {
+    padding: 4px 12px; border-radius: 12px; font-size: 12px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-not_started { background: #1e293b; color: #64748b; }
+  .badge-in_progress { background: #172554; color: #60a5fa; border: 1px solid #1e40af; }
+  .badge-completed { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+  .badge-suspended { background: #3b0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+  .badge-error { background: #3b0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+
+  .token-summary {
+    margin-left: auto; display: flex; gap: 16px; font-size: 12px; color: #8899aa; align-items: center;
+  }
+  .token-summary .label { color: #556677; }
+  .token-summary .value { color: #93c5fd; font-weight: 600; font-family: 'Cascadia Code', 'Consolas', monospace; }
+  .token-summary .value.warn { color: #fbbf24; }
+  .token-summary .value.danger { color: #f87171; }
+
+  .token-limit-section {
+    display: flex; align-items: center; gap: 8px; padding: 0 12px; border-left: 1px solid #2a3050;
+  }
+  .token-limit-section label { color: #556677; font-size: 12px; }
+
+  .token-limit-input {
+    background: #0a0e1a; border: 1px solid #2a3050; border-radius: 6px;
+    color: #e0e0e0; font-size: 12px; padding: 4px 8px; width: 100px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+  .token-limit-input:focus { outline: none; border-color: #3b82f6; }
+
+  .btn { padding: 4px 10px; border-radius: 6px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn-danger { background: #7f1d1d; color: #fca5a5; border: 1px solid #b91c1c; }
+
+  .limit-reached-alert {
+    display: none; align-items: center; gap: 8px; padding: 6px 12px;
+    background: #3b0a0a; border: 1px solid #7f1d1d; border-radius: 8px;
+    color: #f87171; font-size: 12px; font-weight: 600;
+  }
+  .limit-reached-alert.visible { display: flex; }
+
+  .agents-bar {
+    padding: 0; background: #0c1424; border-bottom: 1px solid #1a2040;
+    font-size: 13px; min-height: 42px; position: relative; overflow: hidden;
+  }
+  .agents-bar.active {
+    background: linear-gradient(135deg, #0c1a3a 0%, #0f1e40 50%, #0c1a3a 100%);
+    border-bottom: 1px solid #1e40af;
+  }
+  .agents-bar-content { display: flex; align-items: center; gap: 12px; padding: 10px 24px; position: relative; z-index: 1; }
+  .agents-bar-idle { color: #475569; display: flex; align-items: center; gap: 8px; padding: 12px 32px; }
+  .agents-bar-idle::before { content: '\25cf'; color: #334155; font-size: 10px; }
+
+  .agent-spinner {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 3px solid #1e3a5f; border-top-color: #60a5fa;
+    animation: agent-spin 1s linear infinite; flex-shrink: 0;
+  }
+  @keyframes agent-spin { to { transform: rotate(360deg); } }
+  .agent-count { font-size: 14px; font-weight: 700; color: #e2e8f0; }
+  .agent-stage-summary { font-size: 12px; color: #93c5fd; }
+  .agents-bar-shimmer { position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, #3b82f608, transparent); animation: shimmer 3s ease-in-out infinite; }
+  @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: #111827; border: 1px solid #2a3050; border-radius: 12px; width: 80%; max-width: 900px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+  .modal.fullscreen { width:100%; max-width:100%; max-height:100%; height:100%; border-radius:0; border:none; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #2a3050; }
+  .modal-header h2 { font-size: 16px; color: #e2e8f0; font-weight: 600; }
+  .modal-header-buttons { display: flex; align-items: center; gap: 4px; }
+  .modal-fullscreen, .modal-close { background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+  .modal-fullscreen { font-size: 16px; }
+  .modal-close { font-size: 22px; }
+  .modal-fullscreen:hover, .modal-close:hover { background: #1e293b; color: #e2e8f0; }
+  .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+  .modal-run { margin-bottom: 24px; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; }
+  .modal-run-header { background: #1a1f35; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #93c5fd; display: flex; justify-content: space-between; }
+  .modal-section { padding: 12px 16px; border-top: 1px solid #1e293b; }
+  .modal-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .modal-section-label.cmd { color: #a3e635; }
+  .modal-section-label.rpt { color: #4ade80; }
+  .modal-section-label.order { color: #4ade80; }
+  .modal-section pre { background: #0a0e1a; border-radius: 6px; padding: 12px; font-size: 12px; line-height: 1.6; color: #cbd5e1; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow-y: auto; font-family: 'Cascadia Code','Consolas',monospace; }
+  .modal.fullscreen .modal-section pre { max-height: none; }
+  .modal-no-data { color: #475569; font-size: 13px; text-align: center; padding: 32px; }
+
+  .pipeline-container { padding: 24px 32px; display: flex; flex-direction: column; gap: 0; min-height: calc(100vh - 180px); align-items: stretch; }
+  .pipeline-row { display: flex; align-items: stretch; gap: 0; }
+  .connector { display: flex; align-items: center; padding: 0 2px; flex-shrink: 0; }
+  .connector svg { width: 36px; height: 24px; }
+  .connector-line { stroke: #2a3050; stroke-width: 2; }
+  .connector-arrow { fill: #2a3050; }
+  .connector.active .connector-line { stroke: #3b82f6; }
+  .connector.active .connector-arrow { fill: #3b82f6; }
+  .connector.done .connector-line { stroke: #166534; }
+  .connector.done .connector-arrow { fill: #166534; }
+  .row-gap { height: 16px; }
+
+  .stage-card { width: calc((100% - 36px * 4) / 5); flex-shrink: 0; flex-grow: 0; min-height: 240px; background: linear-gradient(180deg, #151a2e 0%, #111827 100%); border: 1px solid #2a3050; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; display: flex; flex-direction: column; }
+  .stage-card:hover { border-color: #3b82f6; box-shadow: 0 0 20px #3b82f610; transform: translateY(-2px); }
+  .stage-card.status-in_progress { background: linear-gradient(180deg, #253a6a 0%, #1e3060 100%); border-color: #c0d8ff; box-shadow: 0 0 48px #c0d8ff50, inset 0 0 30px #c0d8ff18; animation: pulse-border 2s ease-in-out infinite; color: #ffffff; }
+  .stage-card.status-in_progress .stage-name { color: #fff; }
+  .stage-card.status-in_progress .stage-number { color: #93c5fd; }
+  .stage-card.status-in_progress .stage-info-row .label { color: #93c5fd; }
+  .stage-card.status-in_progress .stage-info-row .value { color: #fff; }
+  .stage-card.status-in_progress .stage-tokens .label { color: #93c5fd; }
+  .stage-card.status-in_progress .stage-tokens .value { color: #fff; }
+  .stage-card.status-completed { background: linear-gradient(180deg, #0d1f1a 0%, #0a1a15 100%); border-color: #166534; }
+  .stage-card.status-error { border-color: #b91c1c; box-shadow: 0 0 20px #b91c1c40; }
+  .stage-card.status-retry_pending { border-color: #d97706; box-shadow: 0 0 20px #d9770640; }
+  .stage-card.stage-disabled { background: #000000; border-color: #1a1a1a; }
+  .stage-card.stage-disabled:hover { border-color: #1a1a1a; box-shadow: none; transform: none; }
+  .stage-card.stage-disabled .stage-header { border-bottom-color: #111; }
+  .stage-card.stage-disabled .stage-name { color: #2a2a2a; }
+  .stage-card.stage-disabled .stage-number { color: #1a1a1a; }
+  .stage-card.stage-disabled .stage-order-badge { background: #0a0a0a; border-color: #1a1a1a; color: #2a2a2a; }
+  .stage-card.stage-disabled .stage-status-icon { background: #0a0a0a; color: #1a1a1a; }
+  .stage-card.stage-disabled .stage-info-row .label { color: #1a1a1a; }
+  .stage-card.stage-disabled .stage-info-row .value { color: #2a2a2a; }
+  .stage-card.stage-disabled .stage-tokens { background: #050505; }
+  .stage-card.stage-disabled .stage-tokens .label { color: #1a1a1a; }
+  .stage-card.stage-disabled .stage-tokens .value { color: #2a2a2a; }
+  .stage-card.stage-disabled .stage-runs { color: #1a1a1a; }
+  .stage-card.stage-disabled .run-item { color: #1a1a1a; border-bottom-color: #111; }
+  .stage-card.stage-disabled .run-item .run-num { color: #1a1a1a; }
+  @keyframes pulse-border { 0%, 100% { box-shadow: 0 0 36px #c0d8ff40, inset 0 0 24px #c0d8ff10; } 50% { box-shadow: 0 0 56px #c0d8ff70, inset 0 0 36px #c0d8ff20; } }
+
+  .stage-header { padding: 16px 16px 16px 46px; border-bottom: 1px solid #2a3050; position: relative; }
+  .stage-number { font-size: 11px; color: #556677; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .stage-name { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+  .stage-status-icon { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .icon-not_started { background: #1e293b; color: #475569; }
+  .icon-in_progress { background: transparent; border: 3px solid #334155; border-top-color: #c0d8ff; animation: spin 0.8s linear infinite; font-size: 0; }
+  .icon-completed { background: #052e16; color: #4ade80; }
+  .icon-error { background: #7f1d1d; color: #f87171; }
+  .icon-retry_pending { background: #78350f; color: #fbbf24; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .stage-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+  .stage-info-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .stage-info-row .label { color: #556677; }
+  .stage-info-row .value { color: #94a3b8; font-family: 'Cascadia Code','Consolas',monospace; }
+  .stage-tokens { background: #0c101c; border-radius: 8px; padding: 10px 12px; font-size: 11px; }
+  .stage-tokens .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .stage-tokens .label { color: #475569; }
+  .stage-tokens .value { color: #93c5fd; font-family: 'Cascadia Code','Consolas',monospace; }
+  .stage-runs { margin-top: auto; max-height: 100px; overflow-y: auto; font-size: 11px; }
+  .run-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1a2040; color: #64748b; }
+  .run-item:last-child { border-bottom: none; }
+  .run-item .run-num { color: #8b9dc3; font-weight: 600; }
+  .stage-order-badge { position: absolute; top: 14px; left: 14px; width: 24px; height: 24px; border-radius: 50%; background: #1e293b; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #64748b; }
+  .stage-card.status-in_progress .stage-order-badge { background: #1e40af; border-color: #60a5fa; color: #fff; }
+  .stage-card.status-completed .stage-order-badge { background: #166534; border-color: #4ade80; color: #fff; }
+
+  .subtask-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .subtask-chip { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; font-family: 'Cascadia Code','Consolas',monospace; }
+  .subtask-chip.st-in_progress { background: #172554; color: #60a5fa; border: 1px solid #1e40af; }
+  .subtask-chip.st-completed { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+  .subtask-chip.st-error { background: #3b0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+  .subtask-chip.st-retry_pending { background: #451a03; color: #fbbf24; border: 1px solid #92400e; }
+  .subtask-chip.st-not_started { background: #1e293b; color: #64748b; border: 1px solid #334155; }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Pipeline Monitor</h1>
+  <div class="header-right">
+    <button class="btn-command" id="btn-initial-command" onclick="openCommandModal()" disabled>
+      <span>&#x1F4DC;</span> 将軍閣下の命令
+    </button>
+    <div class="header-info"><span id="updated-at">--</span></div>
+  </div>
+</div>
+
+<div class="agents-bar" id="agents-bar">
+  <div class="agents-bar-idle">待機中 &#x2014; エージェントは稼働していません</div>
+</div>
+
+<div class="pipeline-status-bar">
+  <span>パイプライン:</span>
+  <span class="pipeline-badge badge-not_started" id="pipeline-badge">NOT STARTED</span>
+  <span class="pipeline-badge" id="mode-badge" style="background:#1e293b;color:#94a3b8;display:none;"></span>
+  <div class="limit-reached-alert" id="limit-reached-alert">上限到達 - 停止中</div>
+  <div class="token-summary">
+    <span><span class="label">Total Input:</span> <span class="value" id="total-input">0</span></span>
+    <span><span class="label">Total Output:</span> <span class="value" id="total-output">0</span></span>
+    <span><span class="label">合計:</span> <span class="value" id="total-tokens">0</span></span>
+    <div class="token-limit-section">
+      <label for="token-limit-input">トークン上限:</label>
+      <span id="token-limit-display" style="color:#8899aa;font-size:12px;font-family:'Cascadia Code','Consolas',monospace;">制限なし</span>
+      <input type="number" id="token-limit-input" class="token-limit-input" placeholder="上限値" min="1" step="1000">
+      <button class="btn btn-primary" onclick="setTokenLimit()">設定</button>
+      <button class="btn btn-danger" onclick="clearTokenLimit()">上限解除</button>
+    </div>
+  </div>
+</div>
+
+<div class="pipeline-container" id="pipeline-container"></div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 id="modal-title">--</h2>
+      <div class="modal-header-buttons">
+        <button class="modal-fullscreen" id="modal-fullscreen-btn" onclick="toggleFullscreen()" title="全画面切替">&#x26F6;</button>
+        <button class="modal-close" onclick="closeModal()">&#x00D7;</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="command-modal-overlay" onclick="closeCommandModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2 style="display:flex;align-items:center;gap:8px;">
+        <span style="color:#4ade80;">&#x1F4DC;</span> 将軍閣下の命令
+      </h2>
+      <div class="modal-header-buttons">
+        <button class="modal-fullscreen" id="cmd-modal-fullscreen-btn" onclick="toggleCommandFullscreen()" title="全画面切替">&#x26F6;</button>
+        <button class="modal-close" onclick="closeCommandModal()">&#x00D7;</button>
+      </div>
+    </div>
+    <div class="modal-body" id="command-modal-body">
+      <div class="modal-no-data">命令が登録されていません</div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const STAGES = [
+  { key: 'requirements',      num: 'Stage 1', name: '要件定義' },
+  { key: 'data-modeling',     num: 'Stage 2', name: 'データモデリング' },
+  { key: 'design',            num: 'Stage 3', name: '基本設計' },
+  { key: 'project-rule',      num: 'Stage 4', name: 'ルール解析' },
+  { key: 'coding',            num: 'Stage 5', name: 'コーディング' },
+  { key: 'unit-test',         num: 'Stage 6', name: '単体テスト' },
+  { key: 'enhanced-test',    num: 'Stage 6+', name: '強化テスト' },
+  { key: 'complete-test',    num: 'Stage 6++', name: '完全テスト' },
+  { key: 'integration-test',  num: 'Stage 7', name: '結合テスト' },
+  { key: 'skill-dev',         num: 'Stage 8', name: 'スキル開発' }
+];
+const STATUS_ICONS = { not_started:'\u25CB', in_progress:'\u25CE', completed:'\u2713', suspended:'\u2715', error:'\u2717', retry_pending:'\u21BB', skipped:'\u2500' };
+const STATUS_LABELS = { not_started:'NOT STARTED', in_progress:'IN PROGRESS', completed:'COMPLETED', suspended:'SUSPENDED', error:'ERROR', retry_pending:'RETRY', skipped:'SKIPPED' };
+let lastData = null;
+let prevStagesKey = '';
+let prevAgentsKey = '';
+
+function fmt(n) { if(!n) return '0'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toLocaleString(); }
+function fmtTime(iso) { if(!iso) return '--'; return new Date(iso).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+
+function render(data) {
+  lastData = data;
+  const p = data.pipeline||{}, stages = data.stages||{}, ps = p.status||'not_started';
+  document.getElementById('pipeline-badge').textContent = STATUS_LABELS[ps]||ps.toUpperCase();
+  document.getElementById('pipeline-badge').className = 'pipeline-badge badge-'+ps;
+  const modeBadge=document.getElementById('mode-badge');
+  const pMode=p.mode||'normal';
+  const modeLabels={'normal':'NORMAL','enhanced-test':'ENHANCED TEST','complete-test':'COMPLETE TEST'};
+  const modeColors={'normal':['#1e293b','#94a3b8'],'enhanced-test':['#451a03','#fbbf24'],'complete-test':['#3b0764','#c084fc']};
+  modeBadge.textContent=modeLabels[pMode]||pMode.toUpperCase();
+  modeBadge.style.background=(modeColors[pMode]||modeColors['normal'])[0];
+  modeBadge.style.color=(modeColors[pMode]||modeColors['normal'])[1];
+  modeBadge.style.display='inline-block';
+
+  const totalIn=p.total_input_tokens||0, totalOut=p.total_output_tokens||0, totalAll=totalIn+totalOut;
+  const tokenLimit=p.token_limit;
+  let tokenClass='';
+  if(tokenLimit!=null){const r=totalAll/tokenLimit; if(r>=1) tokenClass='danger'; else if(r>=0.8) tokenClass='warn';}
+  document.getElementById('total-input').textContent=fmt(totalIn);
+  document.getElementById('total-output').textContent=fmt(totalOut);
+  const totalEl=document.getElementById('total-tokens');
+  totalEl.textContent=fmt(totalAll); totalEl.className='value'+(tokenClass?' '+tokenClass:'');
+  const alertEl=document.getElementById('limit-reached-alert');
+  if(p.token_limit_reached) alertEl.classList.add('visible'); else alertEl.classList.remove('visible');
+  const ld=document.getElementById('token-limit-display');
+  if(tokenLimit!=null){ld.textContent=fmt(tokenLimit);ld.className=tokenClass||'';} else{ld.textContent='制限なし';ld.className='';}
+  document.getElementById('updated-at').textContent=p.updated_at?'最終更新: '+fmtTime(p.updated_at):'';
+  document.getElementById('btn-initial-command').disabled=!p.initial_command;
+
+  // エージェントバー（データ変化時のみDOM再構築）
+  const bar=document.getElementById('agents-bar');
+  const activeAgents=p.active_agents||[];
+  const agentsKey=activeAgents.map(a=>a.agent+'|'+a.stage+'|'+(a.subtask_id||'')).sort().join(',');
+  if(agentsKey!==prevAgentsKey){
+    prevAgentsKey=agentsKey;
+    if(activeAgents.length>0){
+      bar.classList.add('active');
+      const stageNames=[...new Set(activeAgents.map(a=>{const info=STAGES.find(s=>s.key===a.stage);return info?info.name:a.stage;}))];
+      const label=activeAgents.length+'体のエージェントが稼働中';
+      const stageLabel=stageNames.join(', ');
+      bar.innerHTML='<div class="agents-bar-shimmer"></div><div class="agents-bar-content">'
+        +'<div class="agent-spinner"></div>'
+        +'<span class="agent-count">'+label+'</span>'
+        +'<span class="agent-stage-summary">'+stageLabel+'</span>'
+        +'</div>';
+    } else {
+      bar.classList.remove('active');
+      bar.innerHTML='<div class="agents-bar-idle">待機中 \u2014 エージェントは稼働していません</div>';
+    }
+  }
+
+  // ステージカード（データ変化時のみDOM再構築）
+  const stagesKey=STAGES.map(s=>{const st=stages[s.key]||{};return s.key+':'+(st.enabled!==false?'1':'0')+(st.status||'n')+(st.run_count||0)+(st.duration_seconds||0)
+    +((st.runs||[]).map(r=>(r.input_tokens||0)+','+(r.output_tokens||0)).join(';'))
+    +((st.subtasks||[]).map(sub=>sub.id+':'+(sub.status||'n')+((sub.runs||[]).map(r=>(r.input_tokens||0)+','+(r.output_tokens||0)).join(';'))).join('|'));}).join('/');
+  if(stagesKey!==prevStagesKey){
+    prevStagesKey=stagesKey;
+    const COLS=5; let html='';
+    for(let i=0;i<STAGES.length;i++){
+      const col=i%COLS;
+      if(col===0) html+='<div class="pipeline-row">';
+      if(col>0){
+        const prev=(stages[STAGES[i-1].key]||{}).status||'not_started';
+        const cur=(stages[STAGES[i].key]||{}).status||'not_started';
+        let cls=''; if(prev==='completed'&&cur!=='not_started') cls='active'; if(prev==='completed'&&cur==='completed') cls='done';
+        html+='<div class="connector '+cls+'"><svg viewBox="0 0 36 24"><line x1="0" y1="12" x2="26" y2="12" class="connector-line"/><polygon points="26,6 36,12 26,18" class="connector-arrow"/></svg></div>';
+      }
+      const s=STAGES[i], st=stages[s.key]||{}, status=st.status||'not_started', subtasks=st.subtasks||[];
+      const stageEnabled=st.enabled!==false;
+      let tIn=0, tOut=0, runsHtml='';
+      (st.runs||[]).forEach(r=>{tIn+=r.input_tokens||0;tOut+=r.output_tokens||0;
+        runsHtml+='<div class="run-item"><span class="run-num">#'+r.run+'</span><span>in:'+fmt(r.input_tokens)+' / out:'+fmt(r.output_tokens)+'</span></div>';});
+      subtasks.forEach(sub=>{(sub.runs||[]).forEach(r=>{tIn+=r.input_tokens||0;tOut+=r.output_tokens||0;});});
+
+      let subtaskHtml='';
+      if(subtasks.length>0){subtaskHtml='<div class="subtask-bar">';subtasks.forEach(sub=>{
+        subtaskHtml+='<span class="subtask-chip st-'+(sub.status||'not_started')+'">'+sub.id+'</span>';});subtaskHtml+='</div>';}
+
+      const disabledCls=stageEnabled?'':'stage-disabled';
+      html+='<div class="stage-card status-'+status+' '+disabledCls+'" style="cursor:pointer" onclick="openModal(\''+s.key+'\')">'
+        +'<div class="stage-header"><div class="stage-order-badge">'+(i+1)+'</div>'
+        +'<div class="stage-number">'+s.num+'</div><div class="stage-name">'+s.name+'</div>'
+        +'<div class="stage-status-icon icon-'+status+'">'+(STATUS_ICONS[status]||'\u25CB')+'</div></div>'
+        +'<div class="stage-body">'
+        +'<div class="stage-info-row"><span class="label">ステータス</span><span class="value">'+(STATUS_LABELS[status]||status)+'</span></div>'
+        +'<div class="stage-info-row"><span class="label">実行回数</span><span class="value">'+(st.run_count||0)+' 回</span></div>'
+        +'<div class="stage-info-row"><span class="label">処理時間</span><span class="value">'+(st.duration_seconds!=null&&st.duration_seconds>0?Math.ceil(st.duration_seconds/60)+' 分':'--')+'</span></div>'
+        +subtaskHtml
+        +'<div class="stage-tokens"><div class="row"><span class="label">Input</span><span class="value">'+fmt(tIn)+'</span></div>'
+        +'<div class="row"><span class="label">Output</span><span class="value">'+fmt(tOut)+'</span></div></div>'
+        +(runsHtml?'<div class="stage-runs">'+runsHtml+'</div>':'')
+        +'</div></div>';
+      if(col===COLS-1||i===STAGES.length-1){html+='</div>'; if(i<STAGES.length-1) html+='<div class="row-gap"></div>';}
+    }
+    document.getElementById('pipeline-container').innerHTML=html;
+  }
+}
+
+async function setTokenLimit(){const input=document.getElementById('token-limit-input');const val=input.value.trim();
+  if(val===''||isNaN(Number(val))||Number(val)<=0){alert('有効な正の整数を入力してください。');return;}
+  try{await fetch('/api/token-limit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token_limit:parseInt(val,10)})});input.value='';await poll();}catch(e){alert('設定に失敗: '+e.message);}}
+async function clearTokenLimit(){try{await fetch('/api/token-limit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token_limit:null})});await poll();}catch(e){alert('解除に失敗: '+e.message);}}
+
+function openModal(stageKey){
+  if(!lastData) return;
+  const st=(lastData.stages||{})[stageKey]||{}, runs=st.runs||[], subtasks=st.subtasks||[];
+  const info=STAGES.find(s=>s.key===stageKey);
+  document.getElementById('modal-title').textContent=(info?info.num+' \u2014 '+info.name:stageKey)+' 通信履歴';
+  const body=document.getElementById('modal-body'); let h='';
+
+  subtasks.filter(s=>s.status==='in_progress').forEach(sub=>{
+    h+='<div class="modal-run"><div class="modal-run-header"><span>\u26A1 '+sub.id+' (作戦遂行中)</span>'
+      +'<span style="color:#60a5fa;">scope: '+(sub.scope||[]).join(', ')+'</span></div>';
+    if(sub.pending_command) h+='<div class="modal-section"><div class="modal-section-label cmd">命令書</div><pre>'+escHtml(sub.pending_command)+'</pre></div>';
+    h+='<div class="modal-section"><div class="modal-no-data" style="color:#60a5fa;">作戦遂行中...</div></div></div>';});
+
+  subtasks.filter(s=>s.status!=='in_progress').forEach(sub=>{(sub.runs||[]).forEach(r=>{
+    h+='<div class="modal-run"><div class="modal-run-header"><span>'+sub.id+' #'+r.run+'</span><span>'+fmtTime(r.completed_at)+'</span></div>';
+    if(r.command) h+='<div class="modal-section"><div class="modal-section-label cmd">命令書</div><pre>'+escHtml(r.command)+'</pre></div>';
+    if(r.report) h+='<div class="modal-section"><div class="modal-section-label rpt">報告</div><pre>'+escHtml(extractReportDisplay(r.report))+'</pre></div>';
+    h+='</div>';});});
+
+  if(st.pending_command&&st.status==='in_progress'&&subtasks.length===0){
+    h+='<div class="modal-run"><div class="modal-run-header"><span>第 '+((st.run_count||0)+1)+' 回実行</span><span style="color:#60a5fa;font-weight:600;">作戦遂行中...</span></div>'
+      +'<div class="modal-section"><div class="modal-section-label cmd">命令書</div><pre>'+escHtml(st.pending_command)+'</pre></div>'
+      +'<div class="modal-section"><div class="modal-no-data" style="color:#60a5fa;">作戦遂行中...</div></div></div>';}
+
+  if(runs.length===0&&!h){body.innerHTML='<div class="modal-no-data">まだ実行履歴がありません</div>';} else {
+    runs.forEach(r=>{h+='<div class="modal-run"><div class="modal-run-header"><span>第 '+r.run+' 回実行</span><span>'+fmtTime(r.completed_at)+'</span></div>';
+      if(r.command) h+='<div class="modal-section"><div class="modal-section-label cmd">命令書</div><pre>'+escHtml(r.command)+'</pre></div>';
+      if(r.report) h+='<div class="modal-section"><div class="modal-section-label rpt">報告</div><pre>'+escHtml(extractReportDisplay(r.report))+'</pre></div>';
+      if(!r.command&&!r.report) h+='<div class="modal-section"><div class="modal-no-data">通信データなし</div></div>';
+      h+='</div>';});
+    body.innerHTML=h;}
+  document.getElementById('modal-overlay').classList.add('visible');
+}
+
+function closeModal(e){if(e&&e.target&&e.target.id!=='modal-overlay')return;document.getElementById('modal-overlay').classList.remove('visible');document.querySelector('#modal-overlay .modal').classList.remove('fullscreen');}
+function toggleFullscreen(){const m=document.querySelector('#modal-overlay .modal');m.classList.toggle('fullscreen');document.getElementById('modal-fullscreen-btn').innerHTML=m.classList.contains('fullscreen')?'&#x2750;':'&#x26F6;';}
+function openCommandModal(){if(!lastData||!lastData.pipeline||!lastData.pipeline.initial_command)return;
+  let html='<div class="modal-run"><div class="modal-run-header" style="background:linear-gradient(135deg,#052e16,#14532d);">'
+    +'<span style="color:#4ade80;">将軍閣下からの命令</span><span style="color:#4ade80;">'+(lastData.pipeline.started_at?fmtTime(lastData.pipeline.started_at):'--')+'</span></div>'
+    +'<div class="modal-section"><div class="modal-section-label order">命令内容</div><pre>'+escHtml(lastData.pipeline.initial_command)+'</pre></div></div>';
+  const fr=lastData.pipeline.final_report;
+  if(fr){html+='<div class="modal-run"><div class="modal-run-header" style="background:linear-gradient(135deg,#1a1040,#2e1065);">'
+    +'<span style="color:#c084fc;">\u{1F4CB} 隊長からの最終報告</span>'
+    +'<span style="color:#c084fc;">'+(lastData.pipeline.completed_at?fmtTime(lastData.pipeline.completed_at):'--')+'</span></div>'
+    +'<div class="modal-section"><div class="modal-section-label rpt">報告</div><pre>'+escHtml(fr)+'</pre></div></div>';}
+  document.getElementById('command-modal-body').innerHTML=html;
+  document.getElementById('command-modal-overlay').classList.add('visible');}
+function closeCommandModal(e){if(e&&e.target&&e.target.id!=='command-modal-overlay')return;document.getElementById('command-modal-overlay').classList.remove('visible');document.querySelector('#command-modal-overlay .modal').classList.remove('fullscreen');}
+function toggleCommandFullscreen(){const m=document.querySelector('#command-modal-overlay .modal');m.classList.toggle('fullscreen');document.getElementById('cmd-modal-fullscreen-btn').innerHTML=m.classList.contains('fullscreen')?'&#x2750;':'&#x26F6;';}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function extractReportDisplay(report){if(!report)return '';try{const o=JSON.parse(report);if(o.content&&Array.isArray(o.content)){const t=o.content.filter(c=>c.type==='text'&&c.text).map(c=>c.text);if(t.length>0)return t.join('\n');}}catch(e){}return report;}
+
+async function poll(){try{const res=await fetch('/api/status?t='+Date.now());render(await res.json());}catch(e){console.error(e);}}
+poll(); setInterval(poll, 3000);
+</script>
+</body>
+</html>
