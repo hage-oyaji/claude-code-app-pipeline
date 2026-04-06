@@ -5,7 +5,17 @@
       "Bash(java *)",
       "Bash(gradle *)",
       "Bash(tasklist)",
-      "Read(//c/Program Files//**)"
+      "Read(//c/Program Files//**)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git show)",
+      "Bash(git show *)",
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git log)",
+      "Bash(git log *)"
     ]
   },
   "hooks": {

@@ -16,12 +16,12 @@
     "mode_definitions": {
       "new-development": {
         "description": "新規開発モード。既存資産なし、ゼロから構築する",
-        "enabled_stages": ["requirements", "data-modeling", "design", "coding", "unit-test", "integration-test", "skill-dev"],
+        "enabled_stages": ["requirements", "data-modeling", "design", "coding", "code-review", "unit-test", "integration-test", "skill-dev"],
         "preconditions": []
       },
       "feature-addition": {
         "description": "機能追加モード。既存コードベースに機能を追加する",
-        "enabled_stages": ["requirements", "data-modeling", "project-rule", "design", "coding", "unit-test", "integration-test", "skill-dev"],
+        "enabled_stages": ["requirements", "data-modeling", "project-rule", "design", "coding", "code-review", "unit-test", "integration-test", "skill-dev"],
         "preconditions": ["artifacts/code/"]
       },
       "enhanced-test": {
@@ -74,6 +74,10 @@
     },
     "coding": {
       "required_artifacts": ["artifacts/code/"],
+      "min_file_size_bytes": 0
+    },
+    "code-review": {
+      "required_artifacts": [],
       "min_file_size_bytes": 0
     },
     "unit-test": {
@@ -204,6 +208,29 @@
         "rules/"
       ],
       "inputNote": "design/ は今回の機能分のみ参照。code/ は機能追加時に既存コードの参照が必要な場合のみ。隊長が命令書で対象ファイルを明示すること。",
+      "outputDir": "artifacts/code/"
+    },
+    "code-review": {
+      "enabled": false,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/code/",
+        "artifacts/design/",
+        "artifacts/data-model/",
+        "rules/"
+      ],
+      "inputNote": "git diff / git show / git log でコミット差分を確認し、design/ と rules/ を参照してレビューを行う。",
       "outputDir": "artifacts/code/"
     },
     "unit-test": {

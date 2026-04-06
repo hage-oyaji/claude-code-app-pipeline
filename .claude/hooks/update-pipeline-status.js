@@ -21,6 +21,7 @@ const AGENT_STAGE_MAP = {
   "データモデリングエージェント": "data-modeling",
   "基本設計エージェント": "design",
   "コーディングエージェント": "coding",
+  "ソースレビューエージェント": "code-review",
   "単体テストエージェント": "unit-test",
   "強化テストエージェント": "enhanced-test",
   "完全テストエージェント": "complete-test",
@@ -31,6 +32,7 @@ const AGENT_STAGE_MAP = {
   "data-modeling": "data-modeling",
   "design": "design",
   "coding": "coding",
+  "code-review": "code-review",
   "unit-test": "unit-test",
   "enhanced-test": "enhanced-test",
   "complete-test": "complete-test",
@@ -44,7 +46,7 @@ let DEBUG_LOG = null;
 
 const PIPELINE_ORDER = [
   "requirements", "data-modeling", "project-rule",
-  "design", "coding", "unit-test", "enhanced-test", "complete-test",
+  "design", "coding", "code-review", "unit-test", "enhanced-test", "complete-test",
   "integration-test", "skill-dev",
 ];
 
