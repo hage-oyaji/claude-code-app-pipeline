@@ -6,6 +6,7 @@
       "Bash(gradle *)",
       "Bash(tasklist)",
       "Read(//c/Program Files//**)",
+      "Bash(git checkout -b *)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(git diff)",
