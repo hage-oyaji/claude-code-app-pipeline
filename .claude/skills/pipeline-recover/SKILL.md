@@ -14,7 +14,7 @@ node -e "
 const fs = require('fs');
 const f = 'pipeline/pipeline-status.json';
 const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
-const PIPELINE_ORDER = ['requirements','data-modeling','design','project-rule','coding','unit-test','integration-test','skill-dev'];
+const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev'];
 
 console.log('=== パイプライン復旧診断 ===');
 console.log('パイプライン状態: ' + s.pipeline.status);
@@ -58,6 +58,38 @@ for (const key of PIPELINE_ORDER) {
 "
 ```
 
+## 1-S. suspended 状態の復旧（トークン上限到達時）
+
+トークン上限到達により `suspended` になった場合の復旧手順。
+
+1. 将軍閣下に現状を報告し、以下のいずれかの指示を仰げ:
+   - **上限を引き上げて継続**: Pipeline Monitor（http://localhost:8089）から `token_limit` を変更し、以下のコマンドでフラグを解除する
+   - **パイプラインを終了**: `/pipeline-metrics` で途中経過を報告して終了する
+
+```bash
+node -e "
+const fs = require('fs');
+const f = 'pipeline/pipeline-status.json';
+const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
+
+console.log('現在のトークン上限: ' + (s.pipeline.token_limit || '未設定'));
+console.log('合計トークン消費: ' + ((s.pipeline.total_input_tokens||0) + (s.pipeline.total_output_tokens||0)));
+console.log('token_limit_reached: ' + s.pipeline.token_limit_reached);
+
+if (s.pipeline.token_limit_reached) {
+  s.pipeline.token_limit_reached = false;
+  s.pipeline.status = 'in_progress';
+  s.pipeline.updated_at = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  fs.writeFileSync(f, JSON.stringify(s, null, 2), 'utf-8');
+  console.log('>> suspended 解除完了。パイプライン再開可能。');
+} else {
+  console.log('>> suspended 状態ではありません。');
+}
+"
+```
+
+解除後、中断された工程のエージェントに `/format-order` で命令を出せ。
+
 ## 2. リトライ実行（`retry_pending` の場合）
 
 1. 対処アドバイスに従い、命令書の内容を調整する
@@ -71,6 +103,8 @@ for (const key of PIPELINE_ORDER) {
 | `context_overflow` | 参照ドキュメントを必要最小限に絞る |
 | `timeout` | タスクを分割する |
 | `agent_error` | エラー内容を分析し、命令書を修正する |
+| `rate_limit` | 時間を置いて再実行する。改善しない場合は将軍閣下に上申 |
+| `quota_exceeded` | 課金上限到達のためリトライ不可。将軍閣下に上申せよ |
 
 ## 3. 上申（`error` の場合）
 
@@ -104,3 +138,41 @@ console.log('リセット完了: ' + targetStage);
 ```
 
 リセット後、`/format-order` で該当工程のエージェントに命令を出せ。
+
+## 5. サブタスク個別リセット（並列実行中のエラーサブタスクのみ再実行）
+
+工程内並列でエラーになったサブタスクだけをリセットし、他の完了済みサブタスクはそのまま保持する。
+
+```bash
+node -e "
+const fs = require('fs');
+const f = 'pipeline/pipeline-status.json';
+const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
+const targetStage = process.argv[1];
+const targetSubtask = process.argv[2];
+
+const stage = s.stages[targetStage];
+if (!stage) { console.log('工程が存在しません: ' + targetStage); process.exit(1); }
+if (!stage.subtasks || stage.subtasks.length === 0) { console.log('サブタスクがありません'); process.exit(1); }
+
+const st = stage.subtasks.find(s => s.id === targetSubtask);
+if (!st) { console.log('サブタスクが見つかりません: ' + targetSubtask); process.exit(1); }
+
+console.log('リセット前: ' + st.id + ' [' + st.status + ']');
+st.status = 'not_started';
+st.last_error = null;
+st.started_at = null;
+st.completed_at = null;
+
+// 工程ステータスも in_progress に戻す
+stage.status = 'in_progress';
+s.pipeline.status = 'in_progress';
+s.pipeline.current_stage = targetStage;
+s.pipeline.active_agents = (s.pipeline.active_agents || []).filter(a => !(a.stage === targetStage && a.subtask_id === targetSubtask));
+s.pipeline.updated_at = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+fs.writeFileSync(f, JSON.stringify(s, null, 2), 'utf-8');
+console.log('リセット完了: ' + targetStage + '/' + targetSubtask);
+" 'リセット対象の工程キー' 'リセット対象のサブタスクID'
+```
+
+リセット後、`/format-order` でサブタスク命令書（【サブタスク: {id}】【担当範囲: {scope}】付き）を発令せよ。

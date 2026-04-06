@@ -11,3 +11,4 @@ artifacts/docs/*
 artifacts/requirements/*
 artifacts/test-results/*
 rules/*
+!rules/pipeline-rules.md

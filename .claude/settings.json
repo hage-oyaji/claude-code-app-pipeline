@@ -1,19 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node c:/develop/claudeapp/tools/pipeline-monitor.js)",
-      "Bash(node -c \"c:/develop/claudeapp/tools/pipeline-monitor.js\")",
-      "Bash(node -e \"try { require\\('c:/develop/claudeapp/tools/pipeline-monitor.js'\\); } catch\\(e\\) { if \\(e.code === 'EADDRINUSE'\\) { console.log\\('Syntax OK \\(port in use\\)'\\); } else if \\(e.message.includes\\('listen'\\)\\) { console.log\\('Syntax OK'\\); } else { console.error\\(e.message\\); process.exit\\(1\\); } }\")",
-      "Bash(node -e \"require\\('fs'\\).readFileSync\\('c:/develop/claudeapp/tools/pipeline-monitor.js', 'utf8'\\); console.log\\('File reads OK'\\)\")",
+      "Bash(node *)",
+      "Bash(java *)",
+      "Bash(gradle *)",
       "Bash(tasklist)",
-      "Bash(findstr /i node)",
-      "Bash(taskkill //PID 17468 //F)",
-      "Bash(gradle --version)",
-      "Bash(java --version)",
-      "Bash(java -version)",
-      "Read(//c/Program Files//**)",
-      "Bash(node -e \"require\\('fs'\\).readFileSync\\('c:/develop/claudeapp/tools/pipeline-monitor.js', 'utf8'\\); console.log\\('OK'\\)\")",
-      "Bash(\"/c/Users/takuto_kitabatake/.jdks/corretto-21.0.8/bin/java.exe\" -version)"
+      "Read(//c/Program Files//**)"
     ]
   },
   "hooks": {
@@ -24,7 +16,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/update-pipeline-status.js\"",
-            "timeout": 10
+            "timeout": 30
           }
         ]
       }
@@ -36,7 +28,7 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/update-pipeline-status.js\"",
-            "timeout": 10
+            "timeout": 30
           }
         ]
       }

@@ -13,8 +13,9 @@ model: sonnet
 1. **隊長の命令に忠実に従え。** 命令の範囲外の作業は行うな。
 2. **報告は必ずフォーマットに従え。**
 3. **テストコードは artifacts/code/ 内の適切な場所に格納せよ。テスト結果は artifacts/test-results/ に格納せよ。**
-4. **要件定義書（artifacts/requirements/）、基本設計書（artifacts/design/）、データモデル（artifacts/data-model/）、実装コード（artifacts/code/）を全て参照してからテストを作成せよ。**
+4. **データモデル（artifacts/data-model/）、基本設計書（artifacts/design/ — 隊長が命令書で指定した今回分のみ）、実装コード（artifacts/code/）、プロジェクトルール（rules/）を参照してからテストを作成せよ。** 要件定義書は基本設計に反映済みのため参照不要。**テストモード（完全テスト単独実行）では design/ が存在しない場合がある。その場合は code/ と rules/ のみを参照してテストを作成せよ。**
 5. **テストが失敗した場合、原因を特定して報告せよ。勝手に本体コードを修正するな。**
+6. **データモデル（artifacts/data-model/ddl.sql）が存在しない場合、作業を中止せよ。** SQL条件網羅にはDDLが必須である。報告書に「DDL未配置のため作業中止」と記載し、隊長殿に上申すること。
 
 ## 担当業務
 

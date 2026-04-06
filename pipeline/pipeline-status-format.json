@@ -12,7 +12,29 @@
     "total_rework_count": 0,
     "token_limit": null,
     "token_limit_reached": false,
-    "mode": "normal",
+    "mode": null,
+    "mode_definitions": {
+      "new-development": {
+        "description": "新規開発モード。既存資産なし、ゼロから構築する",
+        "enabled_stages": ["requirements", "data-modeling", "design", "coding", "unit-test", "integration-test", "skill-dev"],
+        "preconditions": []
+      },
+      "feature-addition": {
+        "description": "機能追加モード。既存コードベースに機能を追加する",
+        "enabled_stages": ["requirements", "data-modeling", "project-rule", "design", "coding", "unit-test", "integration-test", "skill-dev"],
+        "preconditions": ["artifacts/code/"]
+      },
+      "enhanced-test": {
+        "description": "強化テストモード。カバレッジ100%を目標にテストを実施する",
+        "enabled_stages": ["enhanced-test", "integration-test"],
+        "preconditions": ["artifacts/code/"]
+      },
+      "complete-test": {
+        "description": "完全テストモード。条件網羅テストを実施する",
+        "enabled_stages": ["complete-test", "integration-test"],
+        "preconditions": ["artifacts/code/"]
+      }
+    },
     "initial_command": null,
     "final_report": null,
     "last_completed_stage": null,
@@ -26,7 +48,7 @@
   "retry_policy": {
     "description": "エージェント実行失敗時のリトライポリシー",
     "max_retries_per_stage": 2,
-    "retry_on": ["timeout", "context_overflow", "agent_error"]
+    "retry_on": ["timeout", "context_overflow", "agent_error", "rate_limit"]
   },
   "quality_gates": {
     "description": "各工程の品質ゲート定義。required_artifacts に指定されたファイル/ディレクトリが存在しない場合、次工程への遷移をブロックする。",
@@ -37,7 +59,8 @@
     "data-modeling": {
       "required_artifacts": [
         "artifacts/data-model/ddl.sql",
-        "artifacts/data-model/er-diagram.md"
+        "artifacts/data-model/er-diagram.md",
+        "artifacts/data-model/table-definition.md"
       ],
       "min_file_size_bytes": 100
     },
@@ -50,29 +73,29 @@
       "min_file_size_bytes": 100
     },
     "coding": {
-      "required_artifacts": ["artifacts/code/src/"],
-      "min_file_size_bytes": 0,
-      "custom_check": "mvn_compile"
+      "required_artifacts": ["artifacts/code/"],
+      "min_file_size_bytes": 0
     },
     "unit-test": {
-      "required_artifacts": ["artifacts/test-results/"],
-      "min_file_size_bytes": 0,
-      "custom_check": "test_pass_rate"
+      "required_artifacts": ["artifacts/test-results/unit-test-report.md"],
+      "min_file_size_bytes": 100
     },
     "enhanced-test": {
-      "required_artifacts": ["artifacts/test-results/"],
-      "min_file_size_bytes": 0,
-      "custom_check": "test_pass_rate"
+      "required_artifacts": ["artifacts/test-results/enhanced-test-report.md"],
+      "min_file_size_bytes": 100
     },
     "complete-test": {
-      "required_artifacts": ["artifacts/test-results/"],
-      "min_file_size_bytes": 0,
-      "custom_check": "test_pass_rate"
+      "required_artifacts": ["artifacts/test-results/complete-test-report.md"],
+      "min_file_size_bytes": 100
     },
     "integration-test": {
-      "required_artifacts": ["artifacts/test-results/"],
-      "min_file_size_bytes": 0,
-      "custom_check": "test_pass_rate"
+      "required_artifacts": ["artifacts/test-results/integration-test-report.md"],
+      "min_file_size_bytes": 100
+    },
+    "skill-dev": {
+      "_note": "skill-dev は最終工程のため、この品質ゲートが次工程起動時に自動チェックされることはない。隊長が手動で品質確認する際の参考定義として残す。",
+      "required_artifacts": ["artifacts/skills/"],
+      "min_file_size_bytes": 0
     }
   },
   "observability": {
@@ -82,7 +105,7 @@
   },
   "stages": {
     "requirements": {
-      "enabled": true,
+      "enabled": false,
       "status": "not_started",
       "started_at": null,
       "completed_at": null,
@@ -99,26 +122,7 @@
       "outputDir": "artifacts/requirements/"
     },
     "data-modeling": {
-      "enabled": true,
-      "status": "not_started",
-      "started_at": null,
-      "completed_at": null,
-      "duration_seconds": 0,
-      "run_count": 0,
-      "error_count": 0,
-      "rework_count": 0,
-      "last_error": null,
-      "quality_gate_passed": false,
-      "parallel": false,
-      "subtasks": [],
-      "runs": [],
-      "inputDirs": [
-        "artifacts/requirements/"
-      ],
-      "outputDir": "artifacts/data-model/"
-    },
-    "design": {
-      "enabled": true,
+      "enabled": false,
       "status": "not_started",
       "started_at": null,
       "completed_at": null,
@@ -135,10 +139,31 @@
         "artifacts/requirements/",
         "artifacts/data-model/"
       ],
-      "outputDir": "artifacts/design/"
+      "inputNote": "data-model/ は自身の出力先でもあるが、機能追加時に既存DDL・ER図を参照するため入力にも含める。新規開発時は空のため影響なし。",
+      "outputDir": "artifacts/data-model/"
     },
     "project-rule": {
-      "enabled": true,
+      "enabled": false,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/code/"
+      ],
+      "inputNote": "既存コードの解析のみが目的のため、requirements/ や data-model/ は参照不要。コンテキスト消費を抑える。",
+      "outputDir": "rules/"
+    },
+    "design": {
+      "enabled": false,
       "status": "not_started",
       "started_at": null,
       "completed_at": null,
@@ -153,13 +178,13 @@
       "runs": [],
       "inputDirs": [
         "artifacts/requirements/",
-        "artifacts/design/",
-        "artifacts/code/"
+        "artifacts/data-model/",
+        "rules/"
       ],
-      "outputDir": "rules/"
+      "outputDir": "artifacts/design/"
     },
     "coding": {
-      "enabled": true,
+      "enabled": false,
       "status": "not_started",
       "started_at": null,
       "completed_at": null,
@@ -175,13 +200,14 @@
       "inputDirs": [
         "artifacts/data-model/",
         "artifacts/design/",
+        "artifacts/code/",
         "rules/"
       ],
-      "inputNote": "design/ は今回の機能分のみ参照。隊長が命令書で対象ファイルを明示すること。",
+      "inputNote": "design/ は今回の機能分のみ参照。code/ は機能追加時に既存コードの参照が必要な場合のみ。隊長が命令書で対象ファイルを明示すること。",
       "outputDir": "artifacts/code/"
     },
     "unit-test": {
-      "enabled": true,
+      "enabled": false,
       "status": "not_started",
       "started_at": null,
       "completed_at": null,
@@ -218,6 +244,7 @@
         "artifacts/code/",
         "rules/"
       ],
+      "inputNote": "テストモード（強化テスト単独実行）では design/ が存在しない。code/ と rules/ のみを参照してテストを作成させること。",
       "outputDir": "artifacts/test-results/"
     },
     "complete-test": {
@@ -244,7 +271,7 @@
       "outputDir": "artifacts/test-results/"
     },
     "integration-test": {
-      "enabled": true,
+      "enabled": false,
       "status": "not_started",
       "started_at": null,
       "completed_at": null,
@@ -262,11 +289,11 @@
         "artifacts/code/",
         "rules/"
       ],
-      "inputNote": "design/ は今回の機能分のみ参照。隊長が命令書で対象ファイルを明示すること。",
+      "inputNote": "design/ は今回の機能分のみ参照。隊長が命令書で対象ファイルを明示すること。テストモード（強化テスト・完全テスト）では design/ が存在しない場合があるため、その場合は code/ と rules/ のみを参照させること。",
       "outputDir": "artifacts/test-results/"
     },
     "skill-dev": {
-      "enabled": true,
+      "enabled": false,
       "status": "not_started",
       "started_at": null,
       "completed_at": null,

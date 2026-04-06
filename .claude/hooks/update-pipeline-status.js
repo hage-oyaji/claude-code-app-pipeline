@@ -39,12 +39,13 @@ const AGENT_STAGE_MAP = {
   "project-rule": "project-rule",
 };
 
-const DEBUG_LOG = path.join(__dirname, "..", "..", "pipeline", "hook-debug.log");
+// DEBUG_LOG は getProjectDir() 定義後に設定（後方参照）
+let DEBUG_LOG = null;
 
 const PIPELINE_ORDER = [
-  "requirements", "data-modeling", "design",
-  "project-rule", "coding", "unit-test", "integration-test",
-  "skill-dev",
+  "requirements", "data-modeling", "project-rule",
+  "design", "coding", "unit-test", "enhanced-test", "complete-test",
+  "integration-test", "skill-dev",
 ];
 
 // 工程内並列（サブタスク分割）を許可する工程
@@ -53,6 +54,9 @@ const PARALLEL_ALLOWED_STAGES = ["coding", "unit-test", "enhanced-test", "comple
 function getProjectDir() {
   return process.env.CLAUDE_PROJECT_DIR || path.resolve(__dirname, "..", "..");
 }
+
+// DEBUG_LOG を getProjectDir() ベースで初期化
+DEBUG_LOG = path.join(getProjectDir(), "pipeline", "hook-debug.log");
 
 function getStatusFilePath() {
   return path.join(getProjectDir(), "pipeline", "pipeline-status.json");
@@ -64,9 +68,13 @@ function getLockFilePath() {
 
 // === ファイルロック ===
 
+/** PID が生存しているか確認する */
+function isProcessAlive(pid) {
+  try { process.kill(pid, 0); return true; } catch { return false; }
+}
+
 function acquireLock(lockPath, maxWaitMs = 5000) {
   const start = Date.now();
-  const retryInterval = 50;
   while (true) {
     try {
       fs.writeFileSync(lockPath, String(process.pid), { flag: "wx" });
@@ -74,11 +82,14 @@ function acquireLock(lockPath, maxWaitMs = 5000) {
     } catch (e) {
       if (e.code !== "EEXIST") throw e;
       try {
+        const lockContent = fs.readFileSync(lockPath, "utf-8").trim();
+        const lockPid = parseInt(lockContent, 10);
         const lockStat = fs.statSync(lockPath);
         const age = Date.now() - lockStat.mtimeMs;
-        if (age > 10000) {
+        // PID が記録されていて既に死んでいる場合、または 10 秒超過の場合は stale と判定
+        if ((lockPid && !isProcessAlive(lockPid)) || age > 10000) {
           fs.unlinkSync(lockPath);
-          process.stderr.write(`[pipeline] 古いロック解除 (age=${Math.round(age / 1000)}s)\n`);
+          process.stderr.write(`[pipeline] 古いロック解除 (pid=${lockPid}, alive=${isProcessAlive(lockPid)}, age=${Math.round(age / 1000)}s)\n`);
           continue;
         }
       } catch { /* ignore */ }
@@ -87,8 +98,10 @@ function acquireLock(lockPath, maxWaitMs = 5000) {
         process.stderr.write(`[pipeline] ロック取得タイムアウト (${maxWaitMs}ms)\n`);
         return false;
       }
-      const waitUntil = Date.now() + retryInterval;
-      while (Date.now() < waitUntil) { /* spin */ }
+      // CPU負荷を軽減するため短時間スリープ
+      try {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+      } catch { /* ignore */ }
     }
   }
 }
@@ -160,7 +173,7 @@ function createInitialStatus() {
         initial_command: null, last_completed_stage: null, max_parallel: 3,
         checkpoint: { last_successful_stage: null, last_successful_at: null },
       },
-      retry_policy: { max_retries_per_stage: 2, retry_on: ["timeout", "context_overflow", "agent_error"] },
+      retry_policy: { max_retries_per_stage: 2, retry_on: ["timeout", "context_overflow", "agent_error", "rate_limit"] },
       quality_gates: {},
       observability: { stage_metrics: {}, rework_log: [] },
       stages,
@@ -214,7 +227,7 @@ function migrateStatus(status) {
   }
 
   if (!status.retry_policy) {
-    status.retry_policy = { max_retries_per_stage: 2, retry_on: ["timeout", "context_overflow", "agent_error"] };
+    status.retry_policy = { max_retries_per_stage: 2, retry_on: ["timeout", "context_overflow", "agent_error", "rate_limit"] };
   }
   if (!status.quality_gates) status.quality_gates = {};
   if (!status.observability) status.observability = { stage_metrics: {}, rework_log: [] };
@@ -242,20 +255,36 @@ function saveStatus(filePath, data) {
 }
 
 function determinePipelineStatus(stages) {
-  const statuses = PIPELINE_ORDER.map((k) => stages[k]?.status || "not_started");
-  if (statuses.some((s) => s === "suspended")) return "suspended";
-  if (statuses.some((s) => s === "error")) return "error";
-  if (statuses.every((s) => s === "completed" || s === "skipped")) return "completed";
-  if (statuses.some((s) => s === "in_progress" || s === "completed")) return "in_progress";
+  // enabled: false の工程は判定から除外する（skipped と同等に扱う）
+  const activeStatuses = PIPELINE_ORDER
+    .map((k) => stages[k])
+    .filter((s) => s && s.enabled !== false)
+    .map((s) => s.status || "not_started");
+  if (activeStatuses.length === 0) return "not_started";
+  if (activeStatuses.some((s) => s === "suspended")) return "suspended";
+  if (activeStatuses.some((s) => s === "error" || s === "retry_pending")) return "error";
+  if (activeStatuses.every((s) => s === "completed" || s === "skipped")) return "completed";
+  if (activeStatuses.some((s) => s === "in_progress" || s === "completed")) return "in_progress";
   return "not_started";
 }
 
-/** 前工程の品質ゲートを検証する（逐次パイプライン） */
+/** 前工程の品質ゲートを検証する（逐次パイプライン・スキップ工程対応） */
 function checkPreviousStageQualityGate(status, stageKey) {
   const stageIndex = PIPELINE_ORDER.indexOf(stageKey);
   if (stageIndex <= 0) return { passed: true, message: "" };
 
-  const prevStageKey = PIPELINE_ORDER[stageIndex - 1];
+  // スキップ・無効化された工程を飛ばして、直近の有効な前工程を探す
+  let prevStageKey = null;
+  for (let i = stageIndex - 1; i >= 0; i--) {
+    const key = PIPELINE_ORDER[i];
+    const s = status.stages[key];
+    if (s && s.status !== "skipped" && s.enabled !== false) {
+      prevStageKey = key;
+      break;
+    }
+  }
+  if (!prevStageKey) return { passed: true, message: "" };
+
   const prevStage = status.stages[prevStageKey];
 
   if (prevStage && prevStage.status !== "completed" && prevStage.status !== "skipped") {
@@ -280,6 +309,12 @@ function checkPreviousStageQualityGate(status, stageKey) {
         if (stat.isFile() && gate.min_file_size_bytes && stat.size < gate.min_file_size_bytes) {
           missing.push(`${artifact}（サイズ不足: ${stat.size}B < ${gate.min_file_size_bytes}B）`);
         }
+        if (stat.isDirectory()) {
+          const entries = fs.readdirSync(fullPath);
+          if (entries.length === 0) {
+            missing.push(`${artifact}（ディレクトリが空）`);
+          }
+        }
       } catch {
         missing.push(`${artifact}（存在しない）`);
       }
@@ -297,22 +332,54 @@ function checkPreviousStageQualityGate(status, stageKey) {
   return { passed: true, message: "" };
 }
 
+/**
+ * エージェントの実行エラーを検出する。
+ * 報告書テキスト内のログ引用との誤検知を防ぐため、トップレベルの構造化フィールドを
+ * 優先的に検査し、テキスト検索は最小限のパターンに限定する。
+ */
 function detectAgentError(toolResponse) {
   if (!toolResponse) return { hasError: false, errorType: null, errorMessage: null };
+
+  // 構造化レスポンスのトップレベル error フィールドを優先検査
+  let obj = toolResponse;
+  if (typeof obj === "string") { try { obj = JSON.parse(obj); } catch { obj = null; } }
+  if (obj && typeof obj === "object") {
+    // トップレベルの error / is_error フィールド
+    if (obj.is_error === true || (obj.error && typeof obj.error === "object")) {
+      const msg = obj.error?.message || obj.error || "エージェント実行エラー";
+      return { hasError: true, errorType: "agent_error", errorMessage: String(msg) };
+    }
+  }
+
   const text = typeof toolResponse === "string" ? toolResponse : JSON.stringify(toolResponse);
 
-  if (text.includes("context_length_exceeded") || text.includes("context window") || text.includes("too many tokens")) {
+  // Claude API の明確なエラーコード（テキスト中のログ引用では出にくい）
+  if (text.includes("context_length_exceeded") || text.includes("\"type\":\"error\"")) {
     return { hasError: true, errorType: "context_overflow", errorMessage: "コンテキスト長超過" };
   }
-  if (text.includes("timed out") || text.includes("timeout") || text.includes("ETIMEDOUT")) {
+  if (text.includes("timed out") || text.includes("ETIMEDOUT")) {
     return { hasError: true, errorType: "timeout", errorMessage: "タイムアウト" };
   }
-  if (text.includes("\"error\"") || text.includes("agent_error") || text.includes("Agent failed")) {
+  // "Agent failed" はClaude Code内部のエラーメッセージ。報告書中のログ引用との誤検知を防ぐため行頭一致に限定
+  if (/^Agent failed/m.test(text) || text.includes("agent execution failed")) {
     return { hasError: true, errorType: "agent_error", errorMessage: "エージェント実行エラー" };
+  }
+  // レート制限（API使用量上限）— API固有のエラーコード・HTTPステータスに限定し、一般的な語彙との誤検知を防ぐ
+  if (text.includes("rate_limit_error") || text.includes("\"type\":\"rate_limit\"") || text.includes("429 Too Many Requests")) {
+    return { hasError: true, errorType: "rate_limit", errorMessage: "レート制限到達" };
+  }
+  // 課金上限 — API固有のエラーコードのみ検知（"billing" 等の一般語は誤検知リスクが高いため除外）
+  if (text.includes("quota_exceeded") || text.includes("insufficient_quota")) {
+    return { hasError: true, errorType: "quota_exceeded", errorMessage: "課金上限到達" };
   }
   return { hasError: false, errorType: null, errorMessage: null };
 }
 
+/**
+ * トークン消費量を tool_response から抽出する。
+ * 注意: Claude Code の Agent ツールレスポンスにトークン情報が含まれる保証はない。
+ * 取得できない場合は 0 を返す（推定値として扱うこと）。
+ */
 function extractTokens(toolResponse) {
   let inputTokens = 0, outputTokens = 0;
   if (!toolResponse) return { inputTokens, outputTokens };
@@ -400,7 +467,10 @@ function updateObservability(status) {
 function handlePreToolUse(hookInput) {
   const subagentType = hookInput.tool_input?.subagent_type || "";
   const stageKey = AGENT_STAGE_MAP[subagentType];
-  if (!stageKey) return;
+  if (!stageKey) {
+    if (subagentType) process.stderr.write(`[pipeline] 警告: 未知の subagent_type「${subagentType}」— パイプライン制御をバイパスします\n`);
+    return;
+  }
 
   const statusPath = getStatusFilePath();
   const lockPath = getLockFilePath();
@@ -416,6 +486,14 @@ function handlePreToolUse(hookInput) {
     const stage = status.stages[stageKey];
     const prompt = hookInput.tool_input?.prompt || "";
     const subtaskInfo = parseSubtaskInfo(prompt);
+
+    // 無効化された工程のブロック
+    if (stage && stage.enabled === false) {
+      const reason = `工程「${stageKey}」は現在の開発モード「${status.pipeline.mode || "未設定"}」では無効化されています。`;
+      process.stdout.write(JSON.stringify({ decision: "block", reason }) + "\n");
+      process.stderr.write(`[pipeline] ブロック（無効工程）: ${reason}\n`);
+      return;
+    }
 
     // トークン上限チェック
     if (status.pipeline.token_limit_reached === true) {
@@ -538,10 +616,14 @@ function handlePreToolUse(hookInput) {
     // 手戻り検出
     if (stage.completed_at && !subtaskInfo) {
       stage.rework_count = (stage.rework_count || 0) + 1;
+      const previousCompletedAt = stage.completed_at;
+      // 手戻り時は started_at / completed_at をリ��ットし、duration が正しく計算されるようにする
+      stage.started_at = now;
+      stage.completed_at = null;
       if (!status.observability) status.observability = { stage_metrics: {}, rework_log: [] };
       status.observability.rework_log.push({
         stage: stageKey, rework_number: stage.rework_count,
-        triggered_at: now, previous_completed_at: stage.completed_at,
+        triggered_at: now, previous_completed_at: previousCompletedAt,
       });
       process.stderr.write(`[pipeline] 手戻り検出: ${stageKey} (${stage.rework_count}回目)\n`);
     }
@@ -563,7 +645,10 @@ function handlePreToolUse(hookInput) {
 function handlePostToolUse(hookInput) {
   const subagentType = hookInput.tool_input?.subagent_type || "";
   const stageKey = AGENT_STAGE_MAP[subagentType];
-  if (!stageKey) return;
+  if (!stageKey) {
+    if (subagentType) process.stderr.write(`[pipeline] 警告: 未知の subagent_type「${subagentType}」— PostToolUse スキップ\n`);
+    return;
+  }
 
   const statusPath = getStatusFilePath();
   const lockPath = getLockFilePath();
@@ -616,11 +701,13 @@ function handlePostToolUse(hookInput) {
         // 工程レベルのエラーカウント
         stage.error_count = (stage.error_count || 0) + 1;
 
-        // 全サブタスクがエラーなら工程もエラー
+        // 全サブタスクがエラーまたは完了なら工程の状態を確定
         const allErrorOrDone = stage.subtasks.every(s => s.status === "completed" || s.status === "error");
         const anyError = stage.subtasks.some(s => s.status === "error");
         if (allErrorOrDone && anyError) {
           stage.status = "error";
+          stage.completed_at = now;
+          status.pipeline.current_stage = null;
         }
 
         status.pipeline.updated_at = now;
@@ -652,8 +739,15 @@ function handlePostToolUse(hookInput) {
       if (allCompleted) {
         stage.status = "completed";
         stage.completed_at = now;
-        // 工程全体の duration = 最初の started_at から今まで
-        stage.duration_seconds = calcDurationSeconds(stage.started_at, now);
+        // 工程全体の壁時計時間 = 工程開始〜最後のサブタスク完了
+        const wallClockDuration = calcDurationSeconds(stage.started_at, now);
+        // agent-seconds = 各サブタスクの実行時間合計（並列分を含む累積値、参考値）
+        let totalAgentSeconds = 0;
+        for (const s of stage.subtasks) {
+          if (s.runs) { for (const r of s.runs) totalAgentSeconds += (r.duration_seconds || 0); }
+        }
+        stage.duration_seconds = (stage.duration_seconds || 0) + wallClockDuration;
+        stage.agent_seconds = (stage.agent_seconds || 0) + totalAgentSeconds;
         stage.run_count = stage.subtasks.reduce((sum, s) => sum + (s.run_count || 0), 0);
 
         // current_stage をクリア
@@ -727,7 +821,7 @@ function handlePostToolUse(hookInput) {
       process.stderr.write(`[pipeline] ${subagentType} -> ${stageKey}: 完了 (第${stage.run_count}回, ${runDuration}s, in=${inputTokens}, out=${outputTokens})\n`);
     }
 
-    // トークン上限チェック
+    // トークン上限チェック（PostToolUse では block は効かないため、ステータス更新と警告のみ）
     const totalTokens = status.pipeline.total_input_tokens + status.pipeline.total_output_tokens;
     const tokenLimit = status.pipeline.token_limit;
     if (tokenLimit !== null && tokenLimit !== undefined && totalTokens > tokenLimit) {
@@ -735,8 +829,7 @@ function handlePostToolUse(hookInput) {
       status.pipeline.status = "suspended";
       updateObservability(status);
       saveStatus(statusPath, status);
-      process.stderr.write(`[pipeline] トークン上限到達: ${totalTokens} / ${tokenLimit}\n`);
-      process.stdout.write(JSON.stringify({ decision: "block", reason: `トークン上限到達（${totalTokens}/${tokenLimit}）` }) + "\n");
+      process.stderr.write(`[pipeline] トークン上限到達: ${totalTokens} / ${tokenLimit} — 次回の PreToolUse でブロックされます\n`);
       return;
     }
 
@@ -751,8 +844,20 @@ function handlePostToolUse(hookInput) {
 }
 
 function debugLog(msg, data) {
+  if (!process.env.PIPELINE_DEBUG) return;
   const line = `[${new Date().toISOString()}] ${msg}: ${JSON.stringify(data)}\n`;
-  fs.appendFileSync(DEBUG_LOG, line, "utf-8");
+  try {
+    // ログローテーション: 1MB超過で切り詰め
+    try {
+      const stat = fs.statSync(DEBUG_LOG);
+      if (stat.size > 1024 * 1024) {
+        const content = fs.readFileSync(DEBUG_LOG, "utf-8");
+        const lines = content.split("\n");
+        fs.writeFileSync(DEBUG_LOG, lines.slice(-200).join("\n"), "utf-8");
+      }
+    } catch { /* ファイル未存在は無視 */ }
+    fs.appendFileSync(DEBUG_LOG, line, "utf-8");
+  } catch { /* ログ書き込み失敗は無視 */ }
 }
 
 // 標準入力からフック入力を読み取る

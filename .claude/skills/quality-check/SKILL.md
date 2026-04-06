@@ -16,7 +16,7 @@ const path = require('path');
 const f = 'pipeline/pipeline-status.json';
 const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
 const gates = s.quality_gates || {};
-const PIPELINE_ORDER = ['requirements','data-modeling','design','project-rule','coding','unit-test','integration-test','skill-dev'];
+const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev'];
 
 console.log('=== 品質ゲート検証レポート ===');
 console.log('稼働中: ' + JSON.stringify((s.pipeline.active_agents || []).map(a => a.subtask_id || a.stage)));
@@ -105,8 +105,9 @@ if (stage.subtasks && stage.subtasks.length > 0) {
 
 ### テスト工程の結果確認
 
-テスト工程（`unit-test`, `integration-test`）の報告書にテスト失敗がある場合:
+テスト工程（`unit-test`, `enhanced-test`, `complete-test`, `integration-test`）の報告書にテスト失敗がある場合:
 - テスト失敗がコード起因 → コーディング工程に手戻り
 - テスト失敗が設計起因 → 基本設計工程に手戻り
-- 手戻り判断は CLAUDE.md の手戻り規則に従うこと
+- 手戻り判断は pipeline-rules.md の手戻り規則に従うこと
 - サブタスクモードで実行した場合は、全サブタスクの結果を集約してから判断すること
+- **テストモード（強化テスト・完全テスト）では手戻り先の工程（コーディング・基本設計）が無効のため、手戻りは実行できない。** 将軍閣下に上申し、コード修正の指示を仰ぐこと。結合テスト工程も同様。

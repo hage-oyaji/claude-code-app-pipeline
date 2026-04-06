@@ -14,11 +14,13 @@ node -e "
 const fs = require('fs');
 const f = 'pipeline/pipeline-status.json';
 const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
-const PIPELINE_ORDER = ['requirements','data-modeling','design','project-rule','coding','unit-test','integration-test','skill-dev'];
+const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev'];
 const STAGE_NAMES = {
-  'requirements':'要件定義','data-modeling':'データモデリング','design':'基本設計',
-  'project-rule':'プロジェクトルール解析','coding':'コーディング',
-  'unit-test':'単体テスト','integration-test':'結合テスト','skill-dev':'スキル開発',
+  'requirements':'要件定義','data-modeling':'データモデリング',
+  'project-rule':'プロジェクトルール解析','design':'基本設計',
+  'coding':'コーディング','unit-test':'単体テスト',
+  'enhanced-test':'強化テスト','complete-test':'完全テスト',
+  'integration-test':'結合テスト','skill-dev':'スキル開発',
 };
 
 const p = s.pipeline;
@@ -114,3 +116,14 @@ if (errorStages.length > 0) {
 - 合計所要時間・合計トークン
 - サブタスク分割した工程があればその詳細（ID, scope, トークン消費量）
 - 手戻り・エラーがあればその詳細
+
+## 最終報告の保存（パイプライン完了時のみ）
+
+パイプライン完了報告（最終報告）の場合、`/format-report` で将軍閣下に報告した後、報告書テキストを `pipeline-status.json` に記録せよ。Pipeline Monitor から最終報告を参照できるようにするためである。
+
+```bash
+node pipeline/save-final-report.js '報告書テキストをここに記載'
+```
+
+- パイプラインの全工程が完了した時のみ実行すること（途中経過確認では実行しない）
+- このスクリプトは `pipeline.status` を `completed` に設定し、`pipeline.final_report` に報告書テキストを保存する

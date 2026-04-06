@@ -1,11 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find *)",
-      "Bash(ls *)",
-      "Read(//c/develop/claude-code-app-pipeline/artifacts/**)",
-      "Write(//c/develop/claude-code-app-pipeline/artifacts/**)",
-      "Edit(//c/develop/claude-code-app-pipeline/artifacts/**)"
-    ]
+      "Bash(*)",
+      "Read(*)",
+      "Edit(*)",
+      "Write(*)",
+      "Glob(*)",
+      "Grep(*)",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Agent(*)",
+      "NotebookEdit(*)",
+      "Skill(*)"
+    ],
+    "defaultMode": "bypassPermissions"
   }
 }
