@@ -5,10 +5,16 @@ pipeline/hook-debug.log
 
 # 生成されたファイル
 artifacts/code/*
+!artifacts/code/.gitkeep
 artifacts/data-model/*
+!artifacts/data-model/.gitkeep
 artifacts/design/*
+!artifacts/design/.gitkeep
 artifacts/docs/*
+!artifacts/docs/.gitkeep
 artifacts/requirements/*
+!artifacts/requirements/.gitkeep
 artifacts/test-results/*
+!artifacts/test-results/.gitkeep
 rules/*
 !rules/pipeline-rules.md
