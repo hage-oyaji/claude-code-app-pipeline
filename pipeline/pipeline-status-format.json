@@ -16,22 +16,22 @@
     "mode_definitions": {
       "new-development": {
         "description": "新規開発モード。既存資産なし、ゼロから構築する",
-        "enabled_stages": ["requirements", "data-modeling", "design", "coding", "code-review", "unit-test", "integration-test", "skill-dev"],
+        "enabled_stages": ["requirements", "data-modeling", "design", "coding", "code-review", "unit-test", "integration-test", "skill-dev", "doc-merge"],
         "preconditions": []
       },
       "feature-addition": {
         "description": "機能追加モード。既存コードベースに機能を追加する",
-        "enabled_stages": ["requirements", "data-modeling", "project-rule", "design", "coding", "code-review", "unit-test", "integration-test", "skill-dev"],
+        "enabled_stages": ["requirements", "data-modeling", "project-rule", "design", "coding", "code-review", "unit-test", "integration-test", "skill-dev", "doc-merge"],
         "preconditions": ["artifacts/code/"]
       },
       "enhanced-test": {
         "description": "強化テストモード。カバレッジ100%を目標にテストを実施する",
-        "enabled_stages": ["enhanced-test", "integration-test"],
+        "enabled_stages": ["enhanced-test", "integration-test", "doc-merge"],
         "preconditions": ["artifacts/code/"]
       },
       "complete-test": {
         "description": "完全テストモード。条件網羅テストを実施する",
-        "enabled_stages": ["complete-test", "integration-test"],
+        "enabled_stages": ["complete-test", "integration-test", "doc-merge"],
         "preconditions": ["artifacts/code/"]
       }
     },
@@ -97,9 +97,13 @@
       "min_file_size_bytes": 100
     },
     "skill-dev": {
-      "_note": "skill-dev は最終工程のため、この品質ゲートが次工程起動時に自動チェックされることはない。隊長が手動で品質確認する際の参考定義として残す。",
       "required_artifacts": ["artifacts/skills/"],
       "min_file_size_bytes": 0
+    },
+    "doc-merge": {
+      "_note": "doc-merge は最終工程のため、この品質ゲートが次工程起動時に自動チェックされることはない。隊長が手動で品質確認する際の参考定義として残す。",
+      "required_artifacts": ["artifacts/merged-docs/merged-document.md"],
+      "min_file_size_bytes": 100
     }
   },
   "observability": {
@@ -341,6 +345,30 @@
         ".claude/skills/"
       ],
       "outputDir": "artifacts/skills/"
+    },
+    "doc-merge": {
+      "enabled": false,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/requirements/",
+        "artifacts/data-model/",
+        "artifacts/design/",
+        "artifacts/test-results/",
+        "rules/"
+      ],
+      "inputNote": "全工程の成果物ドキュメントを統合する。存在しないファイルはスキップする。",
+      "outputDir": "artifacts/merged-docs/"
     }
   }
 }

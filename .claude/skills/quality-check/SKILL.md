@@ -16,7 +16,7 @@ const path = require('path');
 const f = 'pipeline/pipeline-status.json';
 const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
 const gates = s.quality_gates || {};
-const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev'];
+const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev','doc-merge'];
 
 console.log('=== 品質ゲート検証レポート ===');
 console.log('稼働中: ' + JSON.stringify((s.pipeline.active_agents || []).map(a => a.subtask_id || a.stage)));

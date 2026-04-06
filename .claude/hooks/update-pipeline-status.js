@@ -27,6 +27,7 @@ const AGENT_STAGE_MAP = {
   "完全テストエージェント": "complete-test",
   "結合テストエージェント": "integration-test",
   "スキル開発エージェント": "skill-dev",
+  "ドキュメントマージエージェント": "doc-merge",
   "プロジェクトルール解析エージェント": "project-rule",
   "requirements": "requirements",
   "data-modeling": "data-modeling",
@@ -38,6 +39,7 @@ const AGENT_STAGE_MAP = {
   "complete-test": "complete-test",
   "integration-test": "integration-test",
   "skill-dev": "skill-dev",
+  "doc-merge": "doc-merge",
   "project-rule": "project-rule",
 };
 
@@ -47,7 +49,7 @@ let DEBUG_LOG = null;
 const PIPELINE_ORDER = [
   "requirements", "data-modeling", "project-rule",
   "design", "coding", "code-review", "unit-test", "enhanced-test", "complete-test",
-  "integration-test", "skill-dev",
+  "integration-test", "skill-dev", "doc-merge",
 ];
 
 // 工程内並列（サブタスク分割）を許可する工程
