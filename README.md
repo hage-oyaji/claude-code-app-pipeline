@@ -195,7 +195,7 @@ Claude Code を起動し、作りたいシステムを指示する。
 **新規開発の例:**
 ```
 Java + Spring Boot + MyBatis で、会社・組織・社員を管理するREST APIを作れ。
-MySQLを使用し、テストはH2で動くようにしろ。
+PostgreSQLを使用し、テストもPostgreSQLで動くようにしろ。
 ```
 
 **機能追加の例:**
