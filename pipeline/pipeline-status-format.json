@@ -16,22 +16,22 @@
     "mode_definitions": {
       "new-development": {
         "description": "新規開発モード。既存資産なし、ゼロから構築する",
-        "enabled_stages": ["requirements", "data-modeling", "design", "coding", "unit-test", "integration-test", "skill-dev"],
+        "enabled_stages": ["requirements", "data-modeling", "design", "coding", "code-review", "unit-test", "integration-test", "skill-dev", "doc-merge"],
         "preconditions": []
       },
       "feature-addition": {
         "description": "機能追加モード。既存コードベースに機能を追加する",
-        "enabled_stages": ["requirements", "data-modeling", "project-rule", "design", "coding", "unit-test", "integration-test", "skill-dev"],
+        "enabled_stages": ["requirements", "data-modeling", "project-rule", "design", "coding", "code-review", "unit-test", "integration-test", "skill-dev", "doc-merge"],
         "preconditions": ["artifacts/code/"]
       },
       "enhanced-test": {
         "description": "強化テストモード。カバレッジ100%を目標にテストを実施する",
-        "enabled_stages": ["enhanced-test", "integration-test"],
+        "enabled_stages": ["enhanced-test", "integration-test", "doc-merge"],
         "preconditions": ["artifacts/code/"]
       },
       "complete-test": {
         "description": "完全テストモード。条件網羅テストを実施する",
-        "enabled_stages": ["complete-test", "integration-test"],
+        "enabled_stages": ["complete-test", "integration-test", "doc-merge"],
         "preconditions": ["artifacts/code/"]
       }
     },
@@ -76,6 +76,10 @@
       "required_artifacts": ["artifacts/code/"],
       "min_file_size_bytes": 0
     },
+    "code-review": {
+      "required_artifacts": [],
+      "min_file_size_bytes": 0
+    },
     "unit-test": {
       "required_artifacts": ["artifacts/test-results/unit-test-report.md"],
       "min_file_size_bytes": 100
@@ -93,9 +97,13 @@
       "min_file_size_bytes": 100
     },
     "skill-dev": {
-      "_note": "skill-dev は最終工程のため、この品質ゲートが次工程起動時に自動チェックされることはない。隊長が手動で品質確認する際の参考定義として残す。",
       "required_artifacts": ["artifacts/skills/"],
       "min_file_size_bytes": 0
+    },
+    "doc-merge": {
+      "_note": "doc-merge は最終工程のため、この品質ゲートが次工程起動時に自動チェックされることはない。隊長が手動で品質確認する際の参考定義として残す。",
+      "required_artifacts": ["artifacts/merged-docs/merged-document.md"],
+      "min_file_size_bytes": 100
     }
   },
   "observability": {
@@ -206,6 +214,29 @@
       "inputNote": "design/ は今回の機能分のみ参照。code/ は機能追加時に既存コードの参照が必要な場合のみ。隊長が命令書で対象ファイルを明示すること。",
       "outputDir": "artifacts/code/"
     },
+    "code-review": {
+      "enabled": false,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/code/",
+        "artifacts/design/",
+        "artifacts/data-model/",
+        "rules/"
+      ],
+      "inputNote": "git diff / git show / git log でコミット差分を確認し、design/ と rules/ を参照してレビューを行う。",
+      "outputDir": "artifacts/code/"
+    },
     "unit-test": {
       "enabled": false,
       "status": "not_started",
@@ -314,6 +345,30 @@
         ".claude/skills/"
       ],
       "outputDir": "artifacts/skills/"
+    },
+    "doc-merge": {
+      "enabled": false,
+      "status": "not_started",
+      "started_at": null,
+      "completed_at": null,
+      "duration_seconds": 0,
+      "run_count": 0,
+      "error_count": 0,
+      "rework_count": 0,
+      "last_error": null,
+      "quality_gate_passed": false,
+      "parallel": false,
+      "subtasks": [],
+      "runs": [],
+      "inputDirs": [
+        "artifacts/requirements/",
+        "artifacts/data-model/",
+        "artifacts/design/",
+        "artifacts/test-results/",
+        "rules/"
+      ],
+      "inputNote": "全工程の成果物ドキュメントを統合する。存在しないファイルはスキップする。",
+      "outputDir": "artifacts/merged-docs/"
     }
   }
 }

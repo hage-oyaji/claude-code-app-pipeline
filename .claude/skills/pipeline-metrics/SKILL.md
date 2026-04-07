@@ -14,13 +14,14 @@ node -e "
 const fs = require('fs');
 const f = 'pipeline/pipeline-status.json';
 const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
-const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev'];
+const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev','doc-merge'];
 const STAGE_NAMES = {
   'requirements':'要件定義','data-modeling':'データモデリング',
   'project-rule':'プロジェクトルール解析','design':'基本設計',
   'coding':'コーディング','unit-test':'単体テスト',
   'enhanced-test':'強化テスト','complete-test':'完全テスト',
   'integration-test':'結合テスト','skill-dev':'スキル開発',
+  'doc-merge':'ドキュメントマージ',
 };
 
 const p = s.pipeline;

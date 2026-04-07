@@ -144,22 +144,22 @@
   .connector svg { width: 36px; height: 24px; }
   .connector-line { stroke: #2a3050; stroke-width: 2; }
   .connector-arrow { fill: #2a3050; }
-  .connector.active .connector-line { stroke: #3b82f6; }
-  .connector.active .connector-arrow { fill: #3b82f6; }
-  .connector.done .connector-line { stroke: #166534; }
-  .connector.done .connector-arrow { fill: #166534; }
+  .connector.active .connector-line { stroke: #ffffff; stroke-width: 3; filter: drop-shadow(0 0 6px #ffffffaa); }
+  .connector.active .connector-arrow { fill: #ffffff; filter: drop-shadow(0 0 6px #ffffffaa); }
+  .connector.done .connector-line { stroke: #8890a0; }
+  .connector.done .connector-arrow { fill: #8890a0; }
   .row-gap { height: 16px; }
 
-  .stage-card { width: calc((100% - 36px * 4) / 5); flex-shrink: 0; flex-grow: 0; min-height: 240px; background: linear-gradient(180deg, #151a2e 0%, #111827 100%); border: 1px solid #2a3050; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; display: flex; flex-direction: column; }
+  .stage-card { width: calc((100% - 36px * 5) / 6); flex-shrink: 0; flex-grow: 0; min-height: 240px; background: linear-gradient(180deg, #151a2e 0%, #111827 100%); border: 1px solid #2a3050; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; display: flex; flex-direction: column; }
   .stage-card:hover { border-color: #3b82f6; box-shadow: 0 0 20px #3b82f610; transform: translateY(-2px); }
-  .stage-card.status-in_progress { background: linear-gradient(180deg, #253a6a 0%, #1e3060 100%); border-color: #c0d8ff; box-shadow: 0 0 48px #c0d8ff50, inset 0 0 30px #c0d8ff18; animation: pulse-border 2s ease-in-out infinite; color: #ffffff; }
+  .stage-card.status-in_progress { background: linear-gradient(180deg, #3d5aaa 0%, #345095 100%); border-color: #d0e4ff; box-shadow: 0 0 30px #c0d8ff40, inset 0 0 20px #c0d8ff12; animation: pulse-border 3s ease-in-out infinite; color: #ffffff; }
   .stage-card.status-in_progress .stage-name { color: #fff; }
   .stage-card.status-in_progress .stage-number { color: #93c5fd; }
   .stage-card.status-in_progress .stage-info-row .label { color: #93c5fd; }
   .stage-card.status-in_progress .stage-info-row .value { color: #fff; }
   .stage-card.status-in_progress .stage-tokens .label { color: #93c5fd; }
   .stage-card.status-in_progress .stage-tokens .value { color: #fff; }
-  .stage-card.status-completed { background: linear-gradient(180deg, #0d1f1a 0%, #0a1a15 100%); border-color: #166534; }
+  .stage-card.status-completed { background: linear-gradient(180deg, #333845 0%, #2d3240 100%); border-color: #565c6c; }
   .stage-card.status-error { border-color: #b91c1c; box-shadow: 0 0 20px #b91c1c40; }
   .stage-card.status-retry_pending { border-color: #d97706; box-shadow: 0 0 20px #d9770640; }
   .stage-card.stage-disabled { background: #000000; border-color: #1a1a1a; }
@@ -177,7 +177,7 @@
   .stage-card.stage-disabled .stage-runs { color: #1a1a1a; }
   .stage-card.stage-disabled .run-item { color: #1a1a1a; border-bottom-color: #111; }
   .stage-card.stage-disabled .run-item .run-num { color: #1a1a1a; }
-  @keyframes pulse-border { 0%, 100% { box-shadow: 0 0 36px #c0d8ff40, inset 0 0 24px #c0d8ff10; } 50% { box-shadow: 0 0 56px #c0d8ff70, inset 0 0 36px #c0d8ff20; } }
+  @keyframes pulse-border { 0%, 100% { box-shadow: 0 0 32px #c0d8ff40, inset 0 0 20px #c0d8ff10; } 50% { box-shadow: 0 0 56px #c0d8ff65, inset 0 0 32px #c0d8ff20; } }
 
   .stage-header { padding: 16px 16px 16px 46px; border-bottom: 1px solid #2a3050; position: relative; }
   .stage-number { font-size: 11px; color: #556677; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
@@ -185,7 +185,7 @@
   .stage-status-icon { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
   .icon-not_started { background: #1e293b; color: #475569; }
   .icon-in_progress { background: transparent; border: 3px solid #334155; border-top-color: #c0d8ff; animation: spin 0.8s linear infinite; font-size: 0; }
-  .icon-completed { background: #052e16; color: #4ade80; }
+  .icon-completed { background: #3a3f4d; color: #ffffff; }
   .icon-error { background: #7f1d1d; color: #f87171; }
   .icon-retry_pending { background: #78350f; color: #fbbf24; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -204,7 +204,7 @@
   .run-item .run-num { color: #8b9dc3; font-weight: 600; }
   .stage-order-badge { position: absolute; top: 14px; left: 14px; width: 24px; height: 24px; border-radius: 50%; background: #1e293b; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #64748b; }
   .stage-card.status-in_progress .stage-order-badge { background: #1e40af; border-color: #60a5fa; color: #fff; }
-  .stage-card.status-completed .stage-order-badge { background: #166534; border-color: #4ade80; color: #fff; }
+  .stage-card.status-completed .stage-order-badge { background: #3a3f4d; border-color: #888ea0; color: #ffffff; }
 
   .subtask-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
   .subtask-chip { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; font-family: 'Cascadia Code','Consolas',monospace; }
@@ -291,11 +291,13 @@ const STAGES = [
   { key: 'project-rule',      num: 'Stage 3', name: 'ルール解析' },
   { key: 'design',            num: 'Stage 4', name: '基本設計' },
   { key: 'coding',            num: 'Stage 5', name: 'コーディング' },
-  { key: 'unit-test',         num: 'Stage 6', name: '単体テスト' },
-  { key: 'enhanced-test',     num: 'Stage 7', name: '強化テスト' },
-  { key: 'complete-test',     num: 'Stage 8', name: '完全テスト' },
-  { key: 'integration-test',  num: 'Stage 9', name: '結合テスト' },
-  { key: 'skill-dev',         num: 'Stage 10', name: 'スキル開発' }
+  { key: 'code-review',       num: 'Stage 6', name: 'ソースレビュー' },
+  { key: 'unit-test',         num: 'Stage 7', name: '単体テスト' },
+  { key: 'enhanced-test',     num: 'Stage 8', name: '強化テスト' },
+  { key: 'complete-test',     num: 'Stage 9', name: '完全テスト' },
+  { key: 'integration-test',  num: 'Stage 10', name: '結合テスト' },
+  { key: 'skill-dev',         num: 'Stage 11', name: 'スキル開発' },
+  { key: 'doc-merge',         num: 'Stage 12', name: 'ドキュメントマージ' }
 ];
 const STATUS_ICONS = { not_started:'\u25CB', in_progress:'\u25CE', completed:'\u2713', suspended:'\u2715', error:'\u2717', retry_pending:'\u21BB', skipped:'\u2500' };
 const STATUS_LABELS = { not_started:'NOT STARTED', in_progress:'IN PROGRESS', completed:'COMPLETED', suspended:'SUSPENDED', error:'ERROR', retry_pending:'RETRY', skipped:'SKIPPED' };
@@ -363,7 +365,7 @@ function render(data) {
     +((st.subtasks||[]).map(sub=>sub.id+':'+(sub.status||'n')+((sub.runs||[]).map(r=>(r.input_tokens||0)+','+(r.output_tokens||0)).join(';'))).join('|'));}).join('/');
   if(stagesKey!==prevStagesKey){
     prevStagesKey=stagesKey;
-    const COLS=5; let html='';
+    const COLS=6; let html='';
     for(let i=0;i<STAGES.length;i++){
       const col=i%COLS;
       if(col===0) html+='<div class="pipeline-row">';

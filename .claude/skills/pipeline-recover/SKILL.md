@@ -14,7 +14,7 @@ node -e "
 const fs = require('fs');
 const f = 'pipeline/pipeline-status.json';
 const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
-const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev'];
+const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','unit-test','enhanced-test','complete-test','integration-test','skill-dev','doc-merge'];
 
 console.log('=== パイプライン復旧診断 ===');
 console.log('パイプライン状態: ' + s.pipeline.status);
