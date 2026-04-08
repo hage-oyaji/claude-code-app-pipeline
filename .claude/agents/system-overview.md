@@ -21,7 +21,7 @@ model: sonnet
 
 - プロジェクト全体のディレクトリ構造把握
 - システム概要（目的・技術スタック・アーキテクチャ）の抽出
-- 機能一覧（エンドポイント・Lambda ハンドラ・処理フロー）の抽出
+- 機能一覧（エンドポイント・コントローラ・Lambda ハンドラ・処理フロー）の抽出
 - ミドルウェア一覧（使用ライブラリ・フレームワーク・外部サービス・AWS サービス）の抽出
 - テーブル一覧（DB定義・DynamoDB テーブル・スキーマ・インデックス）の抽出
 - 成果物 Markdown ファイルの作成
@@ -35,45 +35,74 @@ model: sonnet
 - ルートディレクトリの全ファイル・ディレクトリ一覧（`ls` または Glob）
 - `README.md`, `CLAUDE.md`, ドキュメント類の読み取り
 - `Makefile`, `docker-compose.yml`, `serverless.yml`, `template.yaml` 等のインフラ定義ファイルの読み取り
-- `package.json`, `requirements.txt`, `go.mod`, `pom.xml`, `Cargo.toml` 等の依存関係ファイルの読み取り
+- 依存関係ファイルの読み取り（言語・ビルドツールに応じて以下を確認）:
+  - **Java/Spring**: `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle`, `gradle.properties`
+  - **Node.js**: `package.json`, `package-lock.json`, `yarn.lock`
 
 ### Step 2: ミドルウェア・依存ライブラリの抽出
 
-以下を調査せよ。
+言語・フレームワークに応じて以下を調査せよ。
 
-- 依存関係ファイル（`package.json` の `dependencies`/`devDependencies`, `requirements.txt`, `go.mod` 等）を全て読み取り、使用ライブラリ・バージョンを一覧化
+**Java/Spring プロジェクトの場合:**
+- `pom.xml` の `<dependencies>` セクション、または `build.gradle` の `dependencies {}` ブロックを全て読み取り、使用ライブラリ・バージョンを一覧化
+- Spring Boot の starter 依存（`spring-boot-starter-*`）からフレームワーク構成を把握
+- `import` 文（`import org.springframework.*`, `import javax.*`, `import jakarta.*` 等）を Grep し、使用しているSpringコンポーネントを洗い出す
+- `application.properties` / `application.yml`（`src/main/resources/` 配下）から DB接続・外部サービス接続先・ポート番号・プロファイル設定を読み取る
+- `@Configuration` クラスを Grep し、Bean定義・セキュリティ設定・AOP設定等を確認する
+
+**Node.js プロジェクトの場合:**
+- `package.json` の `dependencies`/`devDependencies` を全て読み取り、使用ライブラリ・バージョンを一覧化
 - `import` / `require` / `from` 文を Grep し、外部パッケージを洗い出す
-- AWS SDK, DB クライアント, HTTP クライアント, 認証ライブラリ等を分類せよ
 - 環境変数定義（`.env`, `*.env`, `config/` 配下）から外部サービス接続先を特定せよ
+
+**共通:**
+- AWS SDK, DB クライアント, HTTP クライアント, 認証ライブラリ等を分類せよ
+- 環境変数定義・設定ファイルから外部サービス接続先を特定せよ
 
 ### Step 3: テーブル定義の抽出
 
 以下を調査せよ。
 
-- DDL ファイル（`*.sql`, `schema.sql`, `migration/`, `migrations/` 配下）を全て読み取る
-- ORM のモデル定義（`models/`, `entities/`, `schemas/` 配下, `@Table`, `@Entity`, `CREATE TABLE` 等）を Grep する
+- DDL ファイル（`*.sql`, `schema.sql`, `migration/`, `migrations/`, `db/` 配下）を全て読み取る
+- ORM のモデル定義を Grep する:
+  - **Java/JPA**: `@Entity`, `@Table`, `@Column`, `@Id` アノテーション（`src/main/java/` 配下の `entity/`, `domain/`, `model/` ディレクトリ）
+  - **MyBatis**: `*Mapper.xml`（`src/main/resources/mapper/` 配下）の SQL 定義
+  - **Node.js/Sequelize**: `Model.init`, `define` 等
+  - **Node.js/TypeORM**: `@Entity`, `@Column` アノテーション
 - AWS CDK / CloudFormation / SAM / Serverless Framework の DynamoDB テーブル定義を読み取る
 - Terraform の `aws_dynamodb_table` リソース定義を読み取る
+- Flyway / Liquibase のマイグレーションファイル（`src/main/resources/db/migration/` 配下）を読み取る
 - テーブル名・カラム名・型・主キー・インデックス・GSI/LSI を洗い出す
 
 ### Step 4: 機能一覧の抽出
 
-以下を調査せよ。
+言語・フレームワークに応じて以下を調査せよ。
 
+**Java/Spring プロジェクトの場合:**
+- `@RestController`, `@Controller` アノテーションを Grep し、コントローラクラスを特定
+- `@RequestMapping`, `@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`, `@PatchMapping` を Grep し、エンドポイント定義を一覧化
+- `@Service` クラスを Grep し、ビジネスロジック層を把握
+- `@Repository` / `@Mapper` クラスを Grep し、データアクセス層を把握
+- Spring Security の設定（`WebSecurityConfigurerAdapter`, `SecurityFilterChain`）を確認し、認証・認可方式を把握
+
+**Node.js/サーバレスの場合:**
 - Lambda ハンドラ関数（`handler`, `lambda_handler`, `Handle` 等）を Grep し、エントリポイントを特定
 - API Gateway のルート定義（`serverless.yml`, `template.yaml`, CDK の `addMethod`, `addResource` 等）を読み取る
-- HTTP ルーティング定義（Express の `router.get/post`, FastAPI の `@app.get/post`, Gin の `r.GET/POST` 等）を Grep する
+- HTTP ルーティング定義（Express の `router.get/post`, Fastify の `fastify.get/post` 等）を Grep する
+
+**共通:**
 - 各機能の入力・処理・出力を概要レベルで把握する
 
 ### Step 5: システム概要の整理
 
 以下を調査・整理せよ。
 
-- アーキテクチャ図相当の情報（サービス間連携・データフロー）を文章で記述
-- 使用言語・ランタイムのバージョン
-- デプロイ先 AWS リージョン・環境（dev/stg/prod）
-- 認証・認可方式
-- ログ・モニタリング方式
+- アーキテクチャ図相当の情報（サービス間連携・データフロー・レイヤー構成）を文章で記述
+- 使用言語・ランタイム・JDK/Node バージョン（`java.version`, `node.version`, `.java-version`, `.nvmrc` 等）
+- Spring Boot バージョン・プロファイル設定（`spring.profiles.active`）
+- デプロイ先 AWS リージョン・環境（dev/stg/prod）またはサーバ環境
+- 認証・認可方式（Spring Security / JWT / OAuth2 / セッション等）
+- ログ・モニタリング方式（Logback / Log4j2 / CloudWatch 等）
 
 ## 成果物フォーマット
 
@@ -112,7 +141,7 @@ model: sonnet
 
 | # | 機能名 | エントリポイント | HTTP メソッド / トリガー | パス / イベント | 概要 |
 |---|--------|-----------------|------------------------|----------------|------|
-| 1 | {機能名} | {ハンドラファイル:関数名} | {GET/POST/SQS等} | {パス/イベント名} | {概要} |
+| 1 | {機能名} | {Controller/Service クラス名:メソッド名 または ハンドラファイル:関数名} | {GET/POST/PUT/DELETE/SQS等} | {パス/イベント名} | {概要} |
 
 ### 2.x {機能名} 詳細
 - **入力**: {リクエストパラメータ・イベント形式}

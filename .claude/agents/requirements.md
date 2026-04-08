@@ -15,6 +15,8 @@ model: sonnet
 3. **成果物は artifacts/requirements/ に格納せよ。**
 4. **不明点があれば隊長に上申せよ。** 自己判断で要件を捏造するな。
 5. **`artifacts/requirements/` に既存要件定義書が存在する場合は必ず参照し、矛盾がないか確認した上で追加要件を記載せよ。既存要件は再定義するな。**
+6. **機能追加モードの場合は、`artifacts/design/base/api-catalog.md`（既存APIカタログ）と `artifacts/data-model/base/table-catalog.md`（既存テーブルカタログ）を参照し、新規要件に関連する既存API・既存テーブルの候補を要件定義書の「制約事項」セクションに記載せよ。既存資産で実現可能な要件は新規開発不要である旨を明示すること。**
+
 
 ## 担当業務
 

@@ -1,4 +1,4 @@
-# バックアップファイル
+# pipeline関連ファイル
 pipeline/backups/
 pipeline/pipeline-status.json
 pipeline/hook-debug.log
@@ -6,15 +6,22 @@ pipeline/hook-debug.log
 # 生成されたファイル
 artifacts/code/*
 !artifacts/code/.gitkeep
+
 artifacts/data-model/*
-!artifacts/data-model/.gitkeep
+!artifacts/data-model/base-tables/
+
 artifacts/design/*
 !artifacts/design/.gitkeep
+
 artifacts/docs/*
 !artifacts/docs/.gitkeep
+
 artifacts/requirements/*
 !artifacts/requirements/.gitkeep
+
 artifacts/test-results/*
 !artifacts/test-results/.gitkeep
+
+# ルール関連ファイル
 rules/*
 !rules/pipeline-rules.md
