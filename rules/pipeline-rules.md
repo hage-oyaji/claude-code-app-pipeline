@@ -29,7 +29,7 @@
 
 事前条件:
 - `artifacts/code/` に既存コードが配置されていること（**必須 — 未配置なら開始不可**）
-- `artifacts/data-model/ddl.sql` が存在しない場合 → 将軍閣下にデータモデルを新規作成してよいか確認を取ること
+- `artifacts/data-model/base/table-catalog.md` が存在しない場合 → 必要なデータモデルをすべて作ることを将軍閣下に報告し、承認を得ること
 
 ```
 要件定義 → [承認] → データモデリング → プロジェクトルール解析 → 基本設計 → [承認] → コーディング → ソースレビュー → 単体テスト → 結合テスト → ドキュメントマージ
@@ -97,6 +97,89 @@
 - レビュー結果が `APPROVE` の場合、次工程（単体テスト）へ進む
 - ソースレビューエージェントは**読み取り専用のgitコマンド**（`git diff`, `git show`, `git status`, `git log`）のみ使用可能
 - ソースレビュー工程自体は成果物ファイルを出力しない（レビュー結果は報告書としてフックに記録される）
+
+## 将軍閣下レビュー
+
+### 概要
+
+パイプライン開始時（モード確定・初期化後）に、**どの工程にレビューを入れるか**を将軍閣下に確認する。選択された工程が完了した時点で隊長が成果物を報告し、将軍閣下の承認を得てから次工程へ進む。
+
+### フラグ定義
+
+各工程に以下のフィールドが設定される:
+
+| フィールド | 型 | 意味 |
+|----------|---|------|
+| `review_required` | boolean | 将軍閣下レビューが必要かどうか |
+| `review_mandatory` | boolean | `true` の場合は必須レビュー（変更不可）。現在は `requirements` のみ |
+| `review_status` | string \| null | `null` / `pending` / `approved` / `rejected` |
+| `review_comment` | string \| null | 将軍閣下からのコメント |
+
+### 必須レビュー工程
+
+`review_mandatory: true` の工程は常に `review_required: true` に強制される。
+
+| 工程 | 理由 |
+|------|------|
+| 要件定義（requirements） | 全工程の基点となるため、作戦内容の確認は常に必須 |
+
+- チェックボックスには表示されない
+- `set-stage-reviews.js --clear` でも解除不可
+
+### 設定方法
+
+`/pipeline-start` の手順2.5で将軍閣下に確認後、`set-stage-reviews.js` で設定する:
+
+```bash
+node pipeline/set-stage-reviews.js design,coding   # 必須以外の任意レビュー設定
+node pipeline/set-stage-reviews.js --clear          # 必須以外を全解除
+```
+
+### レビュー待ちフロー
+
+工程完了時に `review_required: true` の場合、隊長は以下を実行する:
+
+1. 工程の `status` を `awaiting_review` に設定する
+
+   ```bash
+   node -e "
+   const fs = require('fs'), f = 'pipeline/pipeline-status.json';
+   const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
+   s.stages['{工程キー}'].status = 'awaiting_review';
+   s.stages['{工程キー}'].review_status = 'pending';
+   s.pipeline.status = 'awaiting_review';
+   s.pipeline.updated_at = new Date().toISOString().replace(/\.\d{3}Z\$/, 'Z');
+   fs.writeFileSync(f, JSON.stringify(s, null, 2), 'utf-8');
+   console.log('レビュー待ち状態に設定しました');
+   "
+   ```
+
+2. `/format-report` スキルで将軍閣下に成果物を報告し、承認を求める
+
+3. 将軍閣下の承認後、以下を実行して次工程へ進む:
+
+   ```bash
+   node -e "
+   const fs = require('fs'), f = 'pipeline/pipeline-status.json';
+   const s = JSON.parse(fs.readFileSync(f, 'utf-8'));
+   s.stages['{工程キー}'].status = 'completed';
+   s.stages['{工程キー}'].review_status = 'approved';
+   s.pipeline.status = 'in_progress';
+   s.pipeline.updated_at = new Date().toISOString().replace(/\.\d{3}Z\$/, 'Z');
+   fs.writeFileSync(f, JSON.stringify(s, null, 2), 'utf-8');
+   console.log('承認済み — 次工程へ進みます');
+   "
+   ```
+
+4. 将軍閣下が差し戻した場合は `review_status: 'rejected'` とし、コメントに従って手戻り判断を行う
+
+### Pipeline Monitor での表示
+
+- `awaiting_review` 工程: **黄色でパルスアニメーション**（「レビュー待ち」バッジ付き）
+- `review_required: false` の工程: **薄い白系（#1e2234）** で「レビューなし」バッジ付き
+- `review_required: true` で未レビュー: 「レビューあり」バッジ付き
+- 承認済み: 「承認済み」バッジ付き
+- 画面上部にレビュー待ちバナーが表示され、どの工程を待っているかが一目でわかる
 
 ## 工程内並列実行
 

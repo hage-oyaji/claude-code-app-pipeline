@@ -126,6 +126,10 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": true,
+      "review_mandatory": true,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [],
       "outputDir": "artifacts/requirements/"
     },
@@ -143,6 +147,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/requirements/",
         "artifacts/data-model/"
@@ -164,6 +171,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/code/"
       ],
@@ -184,6 +194,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/requirements/",
         "artifacts/data-model/",
@@ -205,6 +218,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/data-model/",
         "artifacts/design/",
@@ -228,6 +244,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/code/",
         "artifacts/design/",
@@ -251,6 +270,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/code/",
         "rules/"
@@ -271,6 +293,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/code/",
         "rules/"
@@ -292,6 +317,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/data-model/",
         "artifacts/design/",
@@ -315,6 +343,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/design/",
         "artifacts/code/",
@@ -337,6 +368,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/requirements/",
         "artifacts/design/",
@@ -360,6 +394,9 @@
       "parallel": false,
       "subtasks": [],
       "runs": [],
+      "review_required": false,
+      "review_status": null,
+      "review_comment": null,
       "inputDirs": [
         "artifacts/requirements/",
         "artifacts/data-model/",

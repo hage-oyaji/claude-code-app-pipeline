@@ -104,6 +104,72 @@ if (missing.length > 0) {
 - **ERROR の場合**: 将軍閣下に不足している資産の配置を依頼し、配置完了後に再実行せよ
 - 機能追加モードで `artifacts/data-model/ddl.sql` が存在しない場合: 将軍閣下にデータモデルを新規作成してよいか確認を取ること
 
+## 2.5. 将軍閣下レビュー設定（新規開始時のみ）
+
+`init-pipeline.js` による初期化完了後、有効工程の一覧を提示し、**どの工程にレビューを入れるか**を将軍閣下に確認せよ。
+
+### 有効工程の一覧を取得（必須・任意分類）
+
+```bash
+node -e "
+const fs = require('fs');
+const s = JSON.parse(fs.readFileSync('pipeline/pipeline-status.json', 'utf-8'));
+const ORDER = ['requirements','data-modeling','project-rule','design','coding','code-review','unit-test','enhanced-test','complete-test','integration-test','skill-dev','doc-merge'];
+const NAMES = {'requirements':'要件定義','data-modeling':'データモデリング','project-rule':'プロジェクトルール解析','design':'基本設計','coding':'コーディング','code-review':'ソースレビュー','unit-test':'単体テスト','enhanced-test':'強化テスト','complete-test':'完全テスト','integration-test':'結合テスト','skill-dev':'スキル開発','doc-merge':'ドキュメントマージ'};
+const enabled = ORDER.filter(k => s.stages[k] && s.stages[k].enabled);
+console.log('=== 必須レビュー工程（変更不可） ===');
+enabled.filter(k => s.stages[k].review_mandatory).forEach(k => console.log('  [★必須] '+k+' ('+NAMES[k]+')'));
+console.log('=== 任意レビュー工程（チェックボックス） ===');
+enabled.filter(k => !s.stages[k].review_mandatory).forEach((k,i) => console.log('  '+(i+1)+'. '+k+' ('+NAMES[k]+')'));
+"
+```
+
+### 将軍閣下への確認フォーマット
+
+取得した一覧をもとに、以下の形式で将軍閣下に確認せよ（必須工程はチェックボックスに含めず、冒頭コメントとして明示する）：
+
+```
+各工程完了後のレビュー有無を設定します。
+
+★ 要件定義は必須レビュー工程です（変更不可）。
+  完了時に必ず成果物を報告し、将軍閣下の承認をいただいてから次工程へ進みます。
+
+以下の工程について、レビューを入れる工程をお選びください。
+チェックを入れた工程が完了した時点で隊長が成果物を報告し、
+将軍閣下の承認をいただいてから次工程へ進みます。
+
+{モード名}モードのレビュー選択可能工程:
+  ☐ データモデリング
+  ☐ 基本設計
+  ☐ コーディング
+  ☐ 単体テスト
+  ☐ 結合テスト
+  ☐ ドキュメントマージ
+  （上記は例。実際の有効かつ非必須の工程を列挙すること）
+
+チェックなしの工程はレビューなしで自動的に次工程へ進みます。
+レビューを入れる工程をご指定ください、将軍閣下。
+（例:「基本設計とコーディング」「全工程」「なし」等でご回答ください）
+```
+
+### 将軍閣下の回答を受けてレビュー設定を適用
+
+将軍閣下の回答から任意レビュー対象の工程を特定し、`set-stage-reviews.js` で設定を適用する。
+**`requirements` は `review_mandatory: true` のため、指定不要・指定しても強制 `true` になる。**
+
+```bash
+node pipeline/set-stage-reviews.js '{任意レビュー対象の工程キーをカンマ区切りで記載}'
+```
+
+例:
+- 「基本設計とコーディング」→ `node pipeline/set-stage-reviews.js design,coding`
+- 「全工程（必須以外）」→ 有効かつ非必須工程のキーを全て指定
+- 「なし」→ `node pipeline/set-stage-reviews.js --clear`
+
+設定後、スクリプトの出力に表示される設定一覧を将軍閣下に一言報告せよ。
+
+**注意:** このステップは新規開始時のみ実行する。復旧（手順3-R）時はスキップしてよい。
+
 ## 3. 将軍閣下の命令を記録
 
 ```bash

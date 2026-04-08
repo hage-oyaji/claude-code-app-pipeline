@@ -160,8 +160,21 @@
   .stage-card.status-in_progress .stage-tokens .label { color: #93c5fd; }
   .stage-card.status-in_progress .stage-tokens .value { color: #fff; }
   .stage-card.status-completed { background: linear-gradient(180deg, #333845 0%, #2d3240 100%); border-color: #565c6c; }
+  .stage-card.status-awaiting_review { background: linear-gradient(180deg, #4a3800 0%, #3d2e00 100%); border-color: #f59e0b; box-shadow: 0 0 30px #f59e0b50, inset 0 0 20px #f59e0b12; animation: pulse-review 2s ease-in-out infinite; }
+  .stage-card.status-awaiting_review .stage-name { color: #fcd34d; }
+  .stage-card.status-awaiting_review .stage-number { color: #fbbf24; }
+  .stage-card.status-awaiting_review .stage-info-row .label { color: #fbbf24; }
+  .stage-card.status-awaiting_review .stage-info-row .value { color: #fcd34d; }
+  .stage-card.status-awaiting_review .stage-tokens .label { color: #d97706; }
+  .stage-card.status-awaiting_review .stage-tokens .value { color: #fcd34d; }
+  .stage-card.status-awaiting_review .stage-order-badge { background: #78350f; border-color: #f59e0b; color: #fcd34d; }
+  @keyframes pulse-review { 0%, 100% { box-shadow: 0 0 30px #f59e0b40, inset 0 0 20px #f59e0b10; } 50% { box-shadow: 0 0 50px #f59e0b70, inset 0 0 30px #f59e0b20; } }
   .stage-card.status-error { border-color: #b91c1c; box-shadow: 0 0 20px #b91c1c40; }
   .stage-card.status-retry_pending { border-color: #d97706; box-shadow: 0 0 20px #d9770640; }
+  /* レビュー不要工程: 白っぽく明るい表示 */
+  .stage-card.no-review-required { background: linear-gradient(180deg, #1e2234 0%, #181d2e 100%); border-color: #3d4460; }
+  .stage-card.no-review-required .stage-name { color: #cbd5e1; }
+  .stage-card.no-review-required .review-badge { display: none; }
   .stage-card.stage-disabled { background: #000000; border-color: #1a1a1a; }
   .stage-card.stage-disabled:hover { border-color: #1a1a1a; box-shadow: none; transform: none; }
   .stage-card.stage-disabled .stage-header { border-bottom-color: #111; }
@@ -179,6 +192,24 @@
   .stage-card.stage-disabled .run-item .run-num { color: #1a1a1a; }
   @keyframes pulse-border { 0%, 100% { box-shadow: 0 0 32px #c0d8ff40, inset 0 0 20px #c0d8ff10; } 50% { box-shadow: 0 0 56px #c0d8ff65, inset 0 0 32px #c0d8ff20; } }
 
+  /* レビューバッジ */
+  .review-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; margin-top: 6px; }
+  .review-badge.pending  { background: #78350f; color: #fcd34d; border: 1px solid #f59e0b; }
+  .review-badge.approved { background: #052e16; color: #4ade80; border: 1px solid #166534; }
+  .review-badge.rejected { background: #3b0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+  .review-badge.required { background: #1a1000; color: #d97706; border: 1px solid #78350f; }
+  .review-badge.not-required { background: #0f172a; color: #64748b; border: 1px solid #334155; }
+
+  /* パイプライン awaiting_review バッジ */
+  .badge-awaiting_review { background: #78350f; color: #fcd34d; border: 1px solid #f59e0b; }
+
+  /* レビュー待ちアラートバナー */
+  .review-alert-bar { display: none; align-items: center; gap: 10px; padding: 10px 32px; background: linear-gradient(135deg, #4a2800 0%, #3d2000 100%); border-bottom: 2px solid #f59e0b; color: #fcd34d; font-size: 14px; font-weight: 700; }
+  .review-alert-bar.visible { display: flex; }
+  .review-alert-bar .review-stage-name { color: #fff; font-weight: 600; }
+  .review-alert-pulse { width: 12px; height: 12px; border-radius: 50%; background: #f59e0b; animation: review-pulse 1.2s ease-in-out infinite; flex-shrink: 0; }
+  @keyframes review-pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 #f59e0b80; } 50% { opacity: 0.8; transform: scale(1.2); box-shadow: 0 0 0 6px #f59e0b00; } }
+
   .stage-header { padding: 16px 16px 16px 46px; border-bottom: 1px solid #2a3050; position: relative; }
   .stage-number { font-size: 11px; color: #556677; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
   .stage-name { font-size: 15px; font-weight: 600; color: #e2e8f0; }
@@ -188,6 +219,8 @@
   .icon-completed { background: #3a3f4d; color: #ffffff; }
   .icon-error { background: #7f1d1d; color: #f87171; }
   .icon-retry_pending { background: #78350f; color: #fbbf24; }
+  .icon-awaiting_review { background: #78350f; color: #fcd34d; animation: review-icon-pulse 1.5s ease-in-out infinite; }
+  @keyframes review-icon-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
   .stage-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
@@ -228,6 +261,13 @@
   </div>
 </div>
 
+<div class="review-alert-bar" id="review-alert-bar">
+  <div class="review-alert-pulse"></div>
+  <span>&#x23F3; 将軍閣下レビュー待ち</span>
+  <span>&mdash;</span>
+  <span class="review-stage-name" id="review-stage-name"></span>
+  <span style="color:#d97706;font-size:13px;font-weight:400;">の成果物をご確認ください。承認後に次工程へ進みます。</span>
+</div>
 <div class="agents-bar" id="agents-bar">
   <div class="agents-bar-idle">待機中 &#x2014; エージェントは稼働していません</div>
 </div>
@@ -299,8 +339,8 @@ const STAGES = [
   { key: 'skill-dev',         num: 'Stage 11', name: 'スキル開発' },
   { key: 'doc-merge',         num: 'Stage 12', name: 'ドキュメントマージ' }
 ];
-const STATUS_ICONS = { not_started:'\u25CB', in_progress:'\u25CE', completed:'\u2713', suspended:'\u2715', error:'\u2717', retry_pending:'\u21BB', skipped:'\u2500' };
-const STATUS_LABELS = { not_started:'NOT STARTED', in_progress:'IN PROGRESS', completed:'COMPLETED', suspended:'SUSPENDED', error:'ERROR', retry_pending:'RETRY', skipped:'SKIPPED' };
+const STATUS_ICONS = { not_started:'\u25CB', in_progress:'\u25CE', completed:'\u2713', suspended:'\u2715', error:'\u2717', retry_pending:'\u21BB', skipped:'\u2500', awaiting_review:'\u23F3' };
+const STATUS_LABELS = { not_started:'NOT STARTED', in_progress:'IN PROGRESS', completed:'COMPLETED', suspended:'SUSPENDED', error:'ERROR', retry_pending:'RETRY', skipped:'SKIPPED', awaiting_review:'REVIEW WAIT' };
 let lastData = null;
 let prevStagesKey = '';
 let prevAgentsKey = '';
@@ -315,12 +355,27 @@ function render(data) {
   document.getElementById('pipeline-badge').className = 'pipeline-badge badge-'+ps;
   const modeBadge=document.getElementById('mode-badge');
   const pMode=p.mode||'normal';
-  const modeLabels={'normal':'NORMAL','enhanced-test':'ENHANCED TEST','complete-test':'COMPLETE TEST'};
-  const modeColors={'normal':['#1e293b','#94a3b8'],'enhanced-test':['#451a03','#fbbf24'],'complete-test':['#3b0764','#c084fc']};
+  const modeLabels={'normal':'NORMAL','new-development':'NEW DEV','feature-addition':'FEATURE ADD','enhanced-test':'ENHANCED TEST','complete-test':'COMPLETE TEST'};
+  const modeColors={'normal':['#1e293b','#94a3b8'],'new-development':['#0f2d1a','#4ade80'],'feature-addition':['#0f1e40','#60a5fa'],'enhanced-test':['#451a03','#fbbf24'],'complete-test':['#3b0764','#c084fc']};
   modeBadge.textContent=modeLabels[pMode]||pMode.toUpperCase();
   modeBadge.style.background=(modeColors[pMode]||modeColors['normal'])[0];
   modeBadge.style.color=(modeColors[pMode]||modeColors['normal'])[1];
   modeBadge.style.display='inline-block';
+
+  // レビュー待ちバナー
+  const reviewBar=document.getElementById('review-alert-bar');
+  const reviewStageEl=document.getElementById('review-stage-name');
+  if(ps==='awaiting_review'){
+    // awaiting_review 状態のステージを探す
+    const reviewingStage=Object.entries(stages||{}).find(([k,v])=>v.status==='awaiting_review');
+    if(reviewingStage){
+      const info=STAGES.find(s=>s.key===reviewingStage[0]);
+      reviewStageEl.textContent=info?info.name:reviewingStage[0];
+    }
+    reviewBar.classList.add('visible');
+  } else {
+    reviewBar.classList.remove('visible');
+  }
 
   const totalIn=p.total_input_tokens||0, totalOut=p.total_output_tokens||0, totalAll=totalIn+totalOut;
   const tokenLimit=p.token_limit;
@@ -361,6 +416,7 @@ function render(data) {
 
   // ステージカード（データ変化時のみDOM再構築）
   const stagesKey=STAGES.map(s=>{const st=stages[s.key]||{};return s.key+':'+(st.enabled!==false?'1':'0')+(st.status||'n')+(st.run_count||0)+(st.duration_seconds||0)
+    +(st.review_required?'R':'r')+(st.review_status||'')
     +((st.runs||[]).map(r=>(r.input_tokens||0)+','+(r.output_tokens||0)).join(';'))
     +((st.subtasks||[]).map(sub=>sub.id+':'+(sub.status||'n')+((sub.runs||[]).map(r=>(r.input_tokens||0)+','+(r.output_tokens||0)).join(';'))).join('|'));}).join('/');
   if(stagesKey!==prevStagesKey){
@@ -377,6 +433,8 @@ function render(data) {
       }
       const s=STAGES[i], st=stages[s.key]||{}, status=st.status||'not_started', subtasks=st.subtasks||[];
       const stageEnabled=st.enabled!==false;
+      const reviewRequired=st.review_required===true;
+      const reviewStatus=st.review_status||null; // null | 'pending' | 'approved' | 'rejected'
       let tIn=0, tOut=0, runsHtml='';
       (st.runs||[]).forEach(r=>{tIn+=r.input_tokens||0;tOut+=r.output_tokens||0;
         runsHtml+='<div class="run-item"><span class="run-num">#'+r.run+'</span><span>in:'+fmt(r.input_tokens)+' / out:'+fmt(r.output_tokens)+'</span></div>';});
@@ -386,12 +444,27 @@ function render(data) {
       if(subtasks.length>0){subtaskHtml='<div class="subtask-bar">';subtasks.forEach(sub=>{
         subtaskHtml+='<span class="subtask-chip st-'+(sub.status||'not_started')+'">'+sub.id+'</span>';});subtaskHtml+='</div>';}
 
+      // レビューバッジ HTML
+      let reviewBadgeHtml='';
+      if(stageEnabled){
+        if(reviewRequired){
+          if(reviewStatus==='pending') reviewBadgeHtml='<span class="review-badge pending">&#x23F3; レビュー待ち</span>';
+          else if(reviewStatus==='approved') reviewBadgeHtml='<span class="review-badge approved">&#x2713; 承認済み</span>';
+          else if(reviewStatus==='rejected') reviewBadgeHtml='<span class="review-badge rejected">&#x2717; 差し戻し</span>';
+          else reviewBadgeHtml='<span class="review-badge required">&#x1F441; レビューあり</span>';
+        } else {
+          reviewBadgeHtml='<span class="review-badge not-required">レビューなし</span>';
+        }
+      }
+
+      const noReviewCls=(stageEnabled && !reviewRequired)?'no-review-required':'';
       const disabledCls=stageEnabled?'':'stage-disabled';
-      html+='<div class="stage-card status-'+status+' '+disabledCls+'" style="cursor:pointer" onclick="openModal(\''+s.key+'\')">'
+      html+='<div class="stage-card status-'+status+' '+disabledCls+' '+noReviewCls+'" style="cursor:pointer" onclick="openModal(\''+s.key+'\')">'
         +'<div class="stage-header"><div class="stage-order-badge">'+(i+1)+'</div>'
         +'<div class="stage-number">'+s.num+'</div><div class="stage-name">'+s.name+'</div>'
         +'<div class="stage-status-icon icon-'+status+'">'+(STATUS_ICONS[status]||'\u25CB')+'</div></div>'
         +'<div class="stage-body">'
+        +reviewBadgeHtml
         +'<div class="stage-info-row"><span class="label">ステータス</span><span class="value">'+(STATUS_LABELS[status]||status)+'</span></div>'
         +'<div class="stage-info-row"><span class="label">実行回数</span><span class="value">'+(st.run_count||0)+' 回</span></div>'
         +'<div class="stage-info-row"><span class="label">処理時間</span><span class="value">'+(st.duration_seconds!=null&&st.duration_seconds>0?Math.ceil(st.duration_seconds/60)+' 分':'--')+'</span></div>'
