@@ -85,6 +85,11 @@ model: sonnet
 # - GETの場合: リクエスト = URIクエリパラメータ（例: ?key=value&key2=value2）、レスポンス = bodyのJSONサンプル
 # - POSTの場合: リクエスト = bodyのJSONサンプル、レスポンス = bodyのJSONサンプル
 ### 2.3 クラス構成（Controller/Service/Dao のクラス名・メソッドシグネチャ）
+# 【厳守】1.3節のディレクトリ構成には全新規ファイルの「ルートからの完全パス」を必ず記載すること。
+# ファイル名のみの記載は禁止。コーディング兵が設計書だけでファイルを配置できる粒度にすること。
+# 既存コードのパッケージ構造を確認し、それに厳密に従ったパスを記載せよ。独自サブパッケージを作成してはならない。
+# 記載例（良い例）: src/main/java/jp/co/example/saleslist/application/controller/RegisterFooController.java
+# 記載例（悪い例）: RegisterFooController.java ← パス不明でコーディング兵が独自判断してしまう
 ### 2.4 データフロー（mermaid シーケンス図 — 必須）
 
 ## 3. 処理フロー
