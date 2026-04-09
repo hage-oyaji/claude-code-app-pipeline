@@ -6,6 +6,11 @@
 <title>Pipeline Monitor</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { scrollbar-width: thin; scrollbar-color: #3d4a6a #0a0e1a; }
+  *::-webkit-scrollbar { width: 6px; height: 6px; }
+  *::-webkit-scrollbar-track { background: #0a0e1a; }
+  *::-webkit-scrollbar-thumb { background: #3d4a6a; border-radius: 3px; }
+  *::-webkit-scrollbar-thumb:hover { background: #5567a0; }
 
   body {
     font-family: 'Segoe UI', -apple-system, sans-serif;
@@ -120,23 +125,23 @@
   .modal { background: #111827; border: 1px solid #2a3050; border-radius: 12px; width: 80%; max-width: 900px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
   .modal.fullscreen { width:100%; max-width:100%; max-height:100%; height:100%; border-radius:0; border:none; }
   .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #2a3050; }
-  .modal-header h2 { font-size: 16px; color: #e2e8f0; font-weight: 600; }
+  .modal-header h2 { font-size: 19px; color: #e2e8f0; font-weight: 600; }
   .modal-header-buttons { display: flex; align-items: center; gap: 4px; }
   .modal-fullscreen, .modal-close { background: none; border: none; color: #64748b; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
-  .modal-fullscreen { font-size: 16px; }
-  .modal-close { font-size: 22px; }
+  .modal-fullscreen { font-size: 19px; }
+  .modal-close { font-size: 25px; }
   .modal-fullscreen:hover, .modal-close:hover { background: #1e293b; color: #e2e8f0; }
   .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
   .modal-run { margin-bottom: 24px; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; }
-  .modal-run-header { background: #1a1f35; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #93c5fd; display: flex; justify-content: space-between; }
+  .modal-run-header { background: #1a1f35; padding: 10px 16px; font-size: 18px; font-weight: 600; color: #93c5fd; display: flex; justify-content: space-between; }
   .modal-section { padding: 12px 16px; border-top: 1px solid #1e293b; }
-  .modal-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-  .modal-section-label.cmd { color: #a3e635; }
+  .modal-section-label { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .modal-section-label.cmd { color: #4ade80; }
   .modal-section-label.rpt { color: #4ade80; }
   .modal-section-label.order { color: #4ade80; }
-  .modal-section pre { background: #0a0e1a; border-radius: 6px; padding: 12px; font-size: 12px; line-height: 1.6; color: #cbd5e1; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow-y: auto; font-family: 'Cascadia Code','Consolas',monospace; }
+  .modal-section pre { background: #0a0e1a; border-radius: 6px; padding: 12px; font-size: 15px; line-height: 1.6; color: #cbd5e1; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow-y: auto; font-family: 'Cascadia Code','Consolas',monospace; }
   .modal.fullscreen .modal-section pre { max-height: none; }
-  .modal-no-data { color: #475569; font-size: 13px; text-align: center; padding: 32px; }
+  .modal-no-data { color: #475569; font-size: 16px; text-align: center; padding: 32px; }
 
   .pipeline-container { padding: 24px 32px; display: flex; flex-direction: column; gap: 0; min-height: calc(100vh - 180px); align-items: stretch; }
   .pipeline-row { display: flex; align-items: stretch; gap: 0; }
@@ -152,6 +157,7 @@
 
   .stage-card { width: calc((100% - 36px * 5) / 6); flex-shrink: 0; flex-grow: 0; min-height: 240px; background: linear-gradient(180deg, #151a2e 0%, #111827 100%); border: 1px solid #2a3050; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; display: flex; flex-direction: column; }
   .stage-card:hover { border-color: #3b82f6; box-shadow: 0 0 20px #3b82f610; transform: translateY(-2px); }
+  .stage-card.status-not_started { background: linear-gradient(180deg, #181e2e 0%, #121828 100%); border-color: #1e2438; }
   .stage-card.status-in_progress { background: linear-gradient(180deg, #3d5aaa 0%, #345095 100%); border-color: #d0e4ff; box-shadow: 0 0 30px #c0d8ff40, inset 0 0 20px #c0d8ff12; animation: pulse-border 3s ease-in-out infinite; color: #ffffff; }
   .stage-card.status-in_progress .stage-name { color: #fff; }
   .stage-card.status-in_progress .stage-number { color: #93c5fd; }
@@ -159,22 +165,42 @@
   .stage-card.status-in_progress .stage-info-row .value { color: #fff; }
   .stage-card.status-in_progress .stage-tokens .label { color: #93c5fd; }
   .stage-card.status-in_progress .stage-tokens .value { color: #fff; }
-  .stage-card.status-completed { background: linear-gradient(180deg, #333845 0%, #2d3240 100%); border-color: #565c6c; }
-  .stage-card.status-awaiting_review { background: linear-gradient(180deg, #4a3800 0%, #3d2e00 100%); border-color: #f59e0b; box-shadow: 0 0 30px #f59e0b50, inset 0 0 20px #f59e0b12; animation: pulse-review 2s ease-in-out infinite; }
-  .stage-card.status-awaiting_review .stage-name { color: #fcd34d; }
-  .stage-card.status-awaiting_review .stage-number { color: #fbbf24; }
-  .stage-card.status-awaiting_review .stage-info-row .label { color: #fbbf24; }
-  .stage-card.status-awaiting_review .stage-info-row .value { color: #fcd34d; }
-  .stage-card.status-awaiting_review .stage-tokens .label { color: #d97706; }
-  .stage-card.status-awaiting_review .stage-tokens .value { color: #fcd34d; }
-  .stage-card.status-awaiting_review .stage-order-badge { background: #78350f; border-color: #f59e0b; color: #fcd34d; }
-  @keyframes pulse-review { 0%, 100% { box-shadow: 0 0 30px #f59e0b40, inset 0 0 20px #f59e0b10; } 50% { box-shadow: 0 0 50px #f59e0b70, inset 0 0 30px #f59e0b20; } }
+  .stage-card.status-in_progress .stage-runs .run-item { color: #ffffff; border-bottom-color: rgba(255,255,255,0.3); }
+  .stage-card.status-in_progress .stage-runs .run-item .run-num { color: #ffffff; }
+  .stage-card.status-completed { background: linear-gradient(180deg, #333845 0%, #2d3240 100%); border-color: #565c6c; color: #ffffff; }
+  .stage-card.status-completed .stage-name { color: #fff; }
+  .stage-card.status-completed .stage-number { color: #93c5fd; }
+  .stage-card.status-completed .stage-info-row .label { color: #93c5fd; }
+  .stage-card.status-completed .stage-info-row .value { color: #fff; }
+  .stage-card.status-completed .stage-tokens .label { color: #93c5fd; }
+  .stage-card.status-completed .stage-tokens .value { color: #93c5fd; }
+  .stage-card.status-completed .stage-runs .run-item { color: #ffffff; border-bottom-color: rgba(255,255,255,0.3); }
+  .stage-card.status-completed .stage-runs .run-item .run-num { color: #ffffff; }
+  .stage-card.status-completed .stage-runs .run-item .run-dur { color: #6ee7b7; }
+  .stage-card.status-awaiting_review { background: linear-gradient(180deg, #d94080 0%, #b53068 100%); border-color: #ffcce8; box-shadow: 0 0 30px #ffcce850, inset 0 0 20px #ffcce812; animation: pulse-review 2s ease-in-out infinite; }
+  .stage-card.status-awaiting_review .stage-name { color: #ffffff; }
+  .stage-card.status-awaiting_review .stage-number { color: #ffffff; }
+  .stage-card.status-awaiting_review .stage-info-row .label { color: #ffffff; }
+  .stage-card.status-awaiting_review .stage-info-row .value { color: #ffffff; }
+  .stage-card.status-awaiting_review .stage-tokens .label { color: #ffffff; }
+  .stage-card.status-awaiting_review .stage-tokens .value { color: #ffffff; }
+  .stage-card.status-awaiting_review .stage-order-badge { background: #5c1033; border-color: #ffcce8; color: #ffffff; }
+  .stage-card.status-awaiting_review .stage-tokens { background: #0c101c; }
+  .stage-card.status-awaiting_review .stage-tokens .label { color: #475569; }
+  .stage-card.status-awaiting_review .stage-tokens .value { color: #93c5fd; }
+  .stage-card.status-awaiting_review .stage-runs .run-item { color: #ffffff; border-bottom-color: rgba(255,255,255,0.3); }
+  .stage-card.status-awaiting_review .stage-runs .run-item .run-num { color: #ffffff; }
+  @keyframes pulse-review { 0%, 100% { box-shadow: 0 0 30px #ffcce840, inset 0 0 20px #ffcce810; } 50% { box-shadow: 0 0 50px #ffcce870, inset 0 0 30px #ffcce820; } }
   .stage-card.status-error { border-color: #b91c1c; box-shadow: 0 0 20px #b91c1c40; }
   .stage-card.status-retry_pending { border-color: #d97706; box-shadow: 0 0 20px #d9770640; }
   /* レビュー不要工程: 白っぽく明るい表示 */
   .stage-card.no-review-required { background: linear-gradient(180deg, #1e2234 0%, #181d2e 100%); border-color: #3d4460; }
   .stage-card.no-review-required .stage-name { color: #cbd5e1; }
   .stage-card.no-review-required .review-badge { display: none; }
+  /* in_progress / completed / not_started は no-review-required より優先 */
+  .stage-card.status-not_started.no-review-required { background: linear-gradient(180deg, #181e2e 0%, #121828 100%); border-color: #1e2438; }
+  .stage-card.status-in_progress.no-review-required { background: linear-gradient(180deg, #3d5aaa 0%, #345095 100%); border-color: #d0e4ff; }
+  .stage-card.status-completed.no-review-required { background: linear-gradient(180deg, #333845 0%, #2d3240 100%); border-color: #565c6c; }
   .stage-card.stage-disabled { background: #000000; border-color: #1a1a1a; }
   .stage-card.stage-disabled:hover { border-color: #1a1a1a; box-shadow: none; transform: none; }
   .stage-card.stage-disabled .stage-header { border-bottom-color: #111; }
@@ -194,24 +220,25 @@
 
   /* レビューバッジ */
   .review-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; margin-top: 6px; }
-  .review-badge.pending  { background: #78350f; color: #fcd34d; border: 1px solid #f59e0b; }
+  .review-badge.pending  { background: #5c1033; color: #fff0f7; border: 1px solid #ffcce8; }
   .review-badge.approved { background: #052e16; color: #4ade80; border: 1px solid #166534; }
   .review-badge.rejected { background: #3b0a0a; color: #f87171; border: 1px solid #7f1d1d; }
   .review-badge.required { background: #1a1000; color: #d97706; border: 1px solid #78350f; }
   .review-badge.not-required { background: #0f172a; color: #64748b; border: 1px solid #334155; }
 
   /* パイプライン awaiting_review バッジ */
-  .badge-awaiting_review { background: #78350f; color: #fcd34d; border: 1px solid #f59e0b; }
+  .badge-awaiting_review { background: #5c1033; color: #fff0f7; border: 1px solid #ffcce8; }
 
   /* レビュー待ちアラートバナー */
-  .review-alert-bar { display: none; align-items: center; gap: 10px; padding: 10px 32px; background: linear-gradient(135deg, #4a2800 0%, #3d2000 100%); border-bottom: 2px solid #f59e0b; color: #fcd34d; font-size: 14px; font-weight: 700; }
+  .review-alert-bar { display: none; align-items: center; gap: 10px; padding: 10px 32px; background: linear-gradient(135deg, #9e2457 0%, #7a1a44 100%); border-bottom: 2px solid #ffcce8; color: #fff0f7; font-size: 14px; font-weight: 700; }
   .review-alert-bar.visible { display: flex; }
   .review-alert-bar .review-stage-name { color: #fff; font-weight: 600; }
-  .review-alert-pulse { width: 12px; height: 12px; border-radius: 50%; background: #f59e0b; animation: review-pulse 1.2s ease-in-out infinite; flex-shrink: 0; }
-  @keyframes review-pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 #f59e0b80; } 50% { opacity: 0.8; transform: scale(1.2); box-shadow: 0 0 0 6px #f59e0b00; } }
+  .review-alert-pulse { width: 12px; height: 12px; border-radius: 50%; background: #ffcce8; animation: review-pulse 1.2s ease-in-out infinite; flex-shrink: 0; }
+  @keyframes review-pulse { 0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 #ffcce880; } 50% { opacity: 0.8; transform: scale(1.2); box-shadow: 0 0 0 6px #ffcce800; } }
 
   .stage-header { padding: 16px 16px 16px 46px; border-bottom: 1px solid #2a3050; position: relative; }
-  .stage-number { font-size: 11px; color: #556677; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .stage-number { font-size: 11px; color: #556677; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: flex; align-items: center; gap: 12px; }
+  .stage-review-label { color: #ffcce8; font-size: 13px; font-weight: 700; letter-spacing: 0.5px; text-transform: lowercase; text-decoration: underline; text-decoration-thickness: 2px; }
   .stage-name { font-size: 15px; font-weight: 600; color: #e2e8f0; }
   .stage-status-icon { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; }
   .icon-not_started { background: #1e293b; color: #475569; }
@@ -219,7 +246,7 @@
   .icon-completed { background: #3a3f4d; color: #ffffff; }
   .icon-error { background: #7f1d1d; color: #f87171; }
   .icon-retry_pending { background: #78350f; color: #fbbf24; }
-  .icon-awaiting_review { background: #78350f; color: #fcd34d; animation: review-icon-pulse 1.5s ease-in-out infinite; }
+  .icon-awaiting_review { background: #5c1033; color: #ffcce8; animation: review-icon-pulse 1.5s ease-in-out infinite; }
   @keyframes review-icon-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -231,10 +258,12 @@
   .stage-tokens .row { display: flex; justify-content: space-between; padding: 2px 0; }
   .stage-tokens .label { color: #475569; }
   .stage-tokens .value { color: #93c5fd; font-family: 'Cascadia Code','Consolas',monospace; }
-  .stage-runs { margin-top: auto; max-height: 100px; overflow-y: auto; font-size: 11px; }
+  .stage-runs { margin-top: auto; max-height: 100px; overflow-y: auto; font-size: 11px; scrollbar-width: none; }
+  .stage-runs::-webkit-scrollbar { display: none; }
   .run-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1a2040; color: #64748b; }
   .run-item:last-child { border-bottom: none; }
   .run-item .run-num { color: #8b9dc3; font-weight: 600; }
+  .run-item .run-dur { color: #6ee7b7; font-size: 10px; }
   .stage-order-badge { position: absolute; top: 14px; left: 14px; width: 24px; height: 24px; border-radius: 50%; background: #1e293b; border: 1px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #64748b; }
   .stage-card.status-in_progress .stage-order-badge { background: #1e40af; border-color: #60a5fa; color: #fff; }
   .stage-card.status-completed .stage-order-badge { background: #3a3f4d; border-color: #888ea0; color: #ffffff; }
@@ -266,7 +295,7 @@
   <span>&#x23F3; 将軍閣下レビュー待ち</span>
   <span>&mdash;</span>
   <span class="review-stage-name" id="review-stage-name"></span>
-  <span style="color:#d97706;font-size:13px;font-weight:400;">の成果物をご確認ください。承認後に次工程へ進みます。</span>
+  <span style="color:#ffffff;font-size:13px;font-weight:400;">の成果物をご確認ください。承認後に次工程へ進みます。</span>
 </div>
 <div class="agents-bar" id="agents-bar">
   <div class="agents-bar-idle">待機中 &#x2014; エージェントは稼働していません</div>
@@ -347,6 +376,7 @@ let prevAgentsKey = '';
 
 function fmt(n) { if(!n) return '0'; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toLocaleString(); }
 function fmtTime(iso) { if(!iso) return '--'; return new Date(iso).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function fmtDur(s) { if(!s) return '--'; const m=Math.floor(s/60),sec=s%60; return m>0?(sec>0?m+'m'+sec+'s':m+'m'):sec+'s'; }
 
 function render(data) {
   lastData = data;
@@ -437,7 +467,7 @@ function render(data) {
       const reviewStatus=st.review_status||null; // null | 'pending' | 'approved' | 'rejected'
       let tIn=0, tOut=0, runsHtml='';
       (st.runs||[]).forEach(r=>{tIn+=r.input_tokens||0;tOut+=r.output_tokens||0;
-        runsHtml+='<div class="run-item"><span class="run-num">#'+r.run+'</span><span>in:'+fmt(r.input_tokens)+' / out:'+fmt(r.output_tokens)+'</span></div>';});
+        runsHtml+='<div class="run-item"><span class="run-num">#'+r.run+'</span><span class="run-dur">'+fmtDur(r.duration_seconds)+'</span><span>in:'+fmt(r.input_tokens)+' / out:'+fmt(r.output_tokens)+'</span></div>';});
       subtasks.forEach(sub=>{(sub.runs||[]).forEach(r=>{tIn+=r.input_tokens||0;tOut+=r.output_tokens||0;});});
 
       let subtaskHtml='';
@@ -448,10 +478,10 @@ function render(data) {
       let reviewBadgeHtml='';
       if(stageEnabled){
         if(reviewRequired){
-          if(reviewStatus==='pending') reviewBadgeHtml='<span class="review-badge pending">&#x23F3; レビュー待ち</span>';
-          else if(reviewStatus==='approved') reviewBadgeHtml='<span class="review-badge approved">&#x2713; 承認済み</span>';
+          if(reviewStatus==='pending') reviewBadgeHtml='';
+          else if(reviewStatus==='approved') reviewBadgeHtml='';
           else if(reviewStatus==='rejected') reviewBadgeHtml='<span class="review-badge rejected">&#x2717; 差し戻し</span>';
-          else reviewBadgeHtml='<span class="review-badge required">&#x1F441; レビューあり</span>';
+          else reviewBadgeHtml='';
         } else {
           reviewBadgeHtml='<span class="review-badge not-required">レビューなし</span>';
         }
@@ -461,7 +491,7 @@ function render(data) {
       const disabledCls=stageEnabled?'':'stage-disabled';
       html+='<div class="stage-card status-'+status+' '+disabledCls+' '+noReviewCls+'" style="cursor:pointer" onclick="openModal(\''+s.key+'\')">'
         +'<div class="stage-header"><div class="stage-order-badge">'+(i+1)+'</div>'
-        +'<div class="stage-number">'+s.num+'</div><div class="stage-name">'+s.name+'</div>'
+        +'<div class="stage-number">'+s.num+(reviewRequired?'<span class="stage-review-label">review</span>':'')+'</div><div class="stage-name">'+s.name+'</div>'
         +'<div class="stage-status-icon icon-'+status+'">'+(STATUS_ICONS[status]||'\u25CB')+'</div></div>'
         +'<div class="stage-body">'
         +reviewBadgeHtml
@@ -500,7 +530,7 @@ function openModal(stageKey){
   subtasks.filter(s=>s.status!=='in_progress').forEach(sub=>{(sub.runs||[]).forEach(r=>{
     h+='<div class="modal-run"><div class="modal-run-header"><span>'+sub.id+' #'+r.run+'</span><span>'+fmtTime(r.completed_at)+'</span></div>';
     if(r.command) h+='<div class="modal-section"><div class="modal-section-label cmd">命令書</div><pre>'+escHtml(r.command)+'</pre></div>';
-    if(r.report) h+='<div class="modal-section"><div class="modal-section-label rpt">報告</div><pre>'+escHtml(extractReportDisplay(r.report))+'</pre></div>';
+    if(r.report) h+='<div class="modal-section"><div class="modal-section-label rpt">報告書</div><pre>'+escHtml(extractReportDisplay(r.report))+'</pre></div>';
     h+='</div>';});});
 
   if(st.pending_command&&st.status==='in_progress'&&subtasks.length===0){
@@ -511,7 +541,7 @@ function openModal(stageKey){
   if(runs.length===0&&!h){body.innerHTML='<div class="modal-no-data">まだ実行履歴がありません</div>';} else {
     runs.forEach(r=>{h+='<div class="modal-run"><div class="modal-run-header"><span>第 '+r.run+' 回実行</span><span>'+fmtTime(r.completed_at)+'</span></div>';
       if(r.command) h+='<div class="modal-section"><div class="modal-section-label cmd">命令書</div><pre>'+escHtml(r.command)+'</pre></div>';
-      if(r.report) h+='<div class="modal-section"><div class="modal-section-label rpt">報告</div><pre>'+escHtml(extractReportDisplay(r.report))+'</pre></div>';
+      if(r.report) h+='<div class="modal-section"><div class="modal-section-label rpt">報告書</div><pre>'+escHtml(extractReportDisplay(r.report))+'</pre></div>';
       if(!r.command&&!r.report) h+='<div class="modal-section"><div class="modal-no-data">通信データなし</div></div>';
       h+='</div>';});
     body.innerHTML=h;}
@@ -528,7 +558,7 @@ function openCommandModal(){if(!lastData||!lastData.pipeline||!lastData.pipeline
   if(fr){html+='<div class="modal-run"><div class="modal-run-header" style="background:linear-gradient(135deg,#1a1040,#2e1065);">'
     +'<span style="color:#c084fc;">\u{1F4CB} 隊長からの最終報告</span>'
     +'<span style="color:#c084fc;">'+(lastData.pipeline.completed_at?fmtTime(lastData.pipeline.completed_at):'--')+'</span></div>'
-    +'<div class="modal-section"><div class="modal-section-label rpt">報告</div><pre>'+escHtml(fr)+'</pre></div></div>';}
+    +'<div class="modal-section"><div class="modal-section-label rpt">報告書</div><pre>'+escHtml(fr)+'</pre></div></div>';}
   document.getElementById('command-modal-body').innerHTML=html;
   document.getElementById('command-modal-overlay').classList.add('visible');}
 function closeCommandModal(e){if(e&&e.target&&e.target.id!=='command-modal-overlay')return;document.getElementById('command-modal-overlay').classList.remove('visible');document.querySelector('#command-modal-overlay .modal').classList.remove('fullscreen');}
