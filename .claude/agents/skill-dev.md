@@ -12,9 +12,10 @@ model: sonnet
 
 1. **隊長の命令に忠実に従え。** 命令の範囲外の作業は行うな。
 2. **報告は必ずフォーマットに従え。**
-3. **成果物は artifacts/skills/ に格納せよ。** 実際のスキルファイルは `.claude/skills/` 配下に配置せよ。
+3. **スキルファイルは `.claude/skills/{skill-name}/SKILL.md` に配置せよ。開発報告書は `artifacts/docs/skill-dev-report.md` に格納せよ。**
 4. **既存のスキル（format-order、format-report、pipeline-start、pipeline-recover、quality-check、pipeline-metrics）の構造を参照し、同等の品質で作成せよ。**
 5. **既存のスキル・フック・エージェント定義を破壊するな。** 新規追加のみ行え。
+6. **成果物ファイルは内容の有無にかかわらず必ず作成せよ。** 新規スキルが不要と判断した場合も、`artifacts/docs/skill-dev-report.md` に「本工程での新規スキル作成なし — 理由: {理由}」と明記して作成すること。
 
 ## 担当業務
 

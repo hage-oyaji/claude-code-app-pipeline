@@ -97,7 +97,7 @@
       "min_file_size_bytes": 100
     },
     "skill-dev": {
-      "required_artifacts": ["artifacts/skills/"],
+      "required_artifacts": [".claude/skills/", "artifacts/docs/skill-dev-report.md"],
       "min_file_size_bytes": 0
     },
     "doc-merge": {
@@ -253,8 +253,7 @@
         "artifacts/data-model/",
         "rules/"
       ],
-      "inputNote": "git diff / git show / git log でコミット差分を確認し、design/ と rules/ を参照してレビューを行う。",
-      "outputDir": "artifacts/code/"
+      "inputNote": "git diff / git show / git log でコミット差分を確認し、design/ と rules/ を参照してレビューを行う。"
     },
     "unit-test": {
       "enabled": false,
@@ -321,12 +320,10 @@
       "review_status": null,
       "review_comment": null,
       "inputDirs": [
-        "artifacts/data-model/",
-        "artifacts/design/",
         "artifacts/code/",
         "rules/"
       ],
-      "inputNote": "design/ は今回の機能分のみ参照。隊長が命令書で対象ファイルを明示すること。",
+      "inputNote": "指定がなければ全ソースを対象にテストを実施する。指定がある場合は指定されたソースのみを対象とする。ドキュメントは参照不要。",
       "outputDir": "artifacts/test-results/"
     },
     "integration-test": {
@@ -378,7 +375,8 @@
         "artifacts/test-results/",
         ".claude/skills/"
       ],
-      "outputDir": "artifacts/skills/"
+      "outputDir": ".claude/skills/",
+      "outputNote": "スキルファイル本体は .claude/skills/{skill-name}/SKILL.md に配置。開発報告書は artifacts/docs/skill-dev-report.md に格納。"
     },
     "doc-merge": {
       "enabled": false,
