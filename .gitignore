@@ -8,7 +8,6 @@ artifacts/code/*
 !artifacts/code/.gitkeep
 
 artifacts/data-model/*
-!artifacts/data-model/base-tables/
 
 artifacts/design/*
 !artifacts/design/.gitkeep

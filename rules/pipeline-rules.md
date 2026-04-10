@@ -252,6 +252,17 @@ node pipeline/set-stage-reviews.js --clear          # 必須以外を全解除
 - エラーサブタスクは他のサブタスクの完了後にリトライまたは上申する
 - 全サブタスクがエラーまたは完了した時点で、エラーがあれば工程ステータスは `error` になる
 
+## 読み取り専用ディレクトリ
+
+以下のディレクトリはパイプライン処理中において**読み取り専用**である。
+
+| ディレクトリ | 用途 | 対象エージェント |
+|-------------|------|----------------|
+| `artifacts/design/base/` | 既存システムの設計資産（API カタログ等） | 基本設計エージェント |
+| `artifacts/data-model/base/` | 既存システムの DDL・テーブル定義 | データモデリングエージェント |
+
+禁止事項はエージェント定義（`.claude/agents/design.md`、`.claude/agents/data-modeling.md`）の鉄則に直接記載済み。
+
 ## 成果物の引き継ぎ
 
 各工程の inputDirs / outputDir は `pipeline/pipeline-status.json` に定義済み。命令書作成時に参照せよ。

@@ -15,6 +15,7 @@ model: sonnet
 3. **成果物は artifacts/data-model/ に格納せよ。**
 4. **要件定義書（artifacts/requirements/）を必ず参照してからモデリングを行え。**
 5. **既存テーブルとの整合性を保て。既存テーブルの再定義はするな。既存テーブルの存在確認は `artifacts/data-model/base/table-catalog.md` を参照せよ。テーブルが存在する場合は `artifacts/data-model/base/ddl/` 配下の該当DDLを必ず参照し、必要に応じて変更を設計せよ。存在しない場合は新規の判断を行え。**
+6. **`artifacts/data-model/base/` 配下は読み取り専用である。このディレクトリ配下のファイルを作成・更新・削除することを絶対に禁止する。参照（Read）のみ許可する。成果物は必ず `artifacts/data-model/` 直下または `artifacts/data-model/base/` 以外のサブディレクトリに出力せよ。**
 6. **DDLファイルの作成まで行え。DDLの実行は行うな。** 実行の要否は報告書の上申事項で隊長に判断を仰ぐこと。隊長の承認後、別途命令を受けてから実行せよ。
 
 ## 担当業務

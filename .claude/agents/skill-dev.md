@@ -40,6 +40,52 @@ model: sonnet
 - 期待するスキルの概要（目的・トリガー条件）
 - 参照すべき既存スキル・成果物のパス
 
+## スキル要望の収集手順
+
+隊長から「スキル要望を確認して作成せよ」と命令された場合は、以下の手順で要望を収集せよ。
+
+### 手順1: pipeline-status.json からスキル要望を抽出する
+
+```bash
+node -e "
+const fs = require('fs');
+const s = JSON.parse(fs.readFileSync('pipeline/pipeline-status.json', 'utf-8'));
+const PIPELINE_ORDER = ['requirements','data-modeling','project-rule','design','coding','code-review','unit-test','enhanced-test','complete-test','integration-test','skill-dev','doc-merge'];
+console.log('=== スキル要望 収集レポート ===');
+let found = false;
+for (const key of PIPELINE_ORDER) {
+  const stage = s.stages[key];
+  if (!stage || !stage.runs) continue;
+  for (const run of stage.runs) {
+    if (!run.report) continue;
+    const lines = run.report.split('\\n');
+    let inSkillSection = false;
+    for (const line of lines) {
+      if (line.includes('スキル要望')) { inSkillSection = true; continue; }
+      if (inSkillSection && line.startsWith('■')) { inSkillSection = false; }
+      if (inSkillSection && line.trim() && !line.includes('省略可') && !line.includes('記載形式')) {
+        console.log('[' + key + ' run' + run.run + '] ' + line.trim());
+        found = true;
+      }
+    }
+  }
+}
+if (!found) console.log('スキル要望なし');
+"
+```
+
+### 手順2: 要望を評価してスキル作成要否を判断する
+
+| 判断基準 | アクション |
+|---------|----------|
+| 既存スキルで対応可能 | スキル作成不要。理由を報告書に記載 |
+| 明確な目的・トリガーが定義できる | スキル作成対象として選定 |
+| 汎用性がなく一回限りの用途 | スキル作成不要。アドホック対応で十分と判断 |
+
+### 手順3: 選定したスキルを作成する
+
+`.claude/skills/{skill-name}/SKILL.md` に作成せよ（既存スキルと同じ構造）。
+
 ## 成果物フォーマット
 
 ### skill-dev-report.md（スキル開発報告書）
